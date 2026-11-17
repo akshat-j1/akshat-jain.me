@@ -29,7 +29,7 @@ test("held W steers with the view during a mouse orbit and releases without phan
   await page.setViewportSize({ width: 1440, height: 900 });
   await observeExplorer(page);
   await page.goto("/explore");
-  await expect(page.getByRole("heading", { name: "Communications relay" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible();
   await expect.poll(async () => (await travellerPose(page))?.speed).toBe(0);
   await page.keyboard.down("w");
   try {
@@ -59,7 +59,7 @@ test("touch arrows follow a rotated camera in landscape and cancel cleanly", asy
     const page = await context.newPage();
     await observeExplorer(page);
     await page.goto("/explore");
-    await expect(page.getByRole("heading", { name: "Communications relay" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible();
     const cdp = await context.newCDPSession(page);
     const canvas = (await page.locator("canvas").boundingBox())!;
     const x = canvas.x + 340;

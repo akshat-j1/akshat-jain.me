@@ -1,5 +1,6 @@
-export const relay = { x: 1.7, z: -10, radius: 2.05, reach: 4.65 };
-export const spawn = { x: 0, z: 2.5 };
+import { moon, relay } from "../../content/worlds";
+export { relay };
+export const spawn = moon.arrival;
 export const boulders = [
   { x: -3.15, z: 2.0, radius: 1.33 },
   { x: 3.95, z: -3.1, radius: 1.02 },

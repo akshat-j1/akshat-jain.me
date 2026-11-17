@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { meetflix } from "../../content/projects";
+import type { Discovery } from "../../content/worlds";
 import type { CameraLook } from "./camera";
 import { createInput, directionFor, type Direction } from "./input";
 import { initialQuality, type Quality, type QualityMode } from "./quality";
@@ -25,21 +25,21 @@ const pad = [
   { direction: "right", label: "Move right", arrow: "→" },
 ] as const;
 
-export function Explorer() {
+export function Explorer({ destinationName, points }: { destinationName: string; points: readonly Discovery[] }) {
   const [status, setStatus] = useState<Status>("probing");
   const [autoQuality, setAutoQuality] = useState<Quality>("balanced");
   const [qualityMode, setQualityMode] = useState<QualityMode>("auto");
   const [observing, setObserving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [looked, setLooked] = useState(false);
-  const [nearby, setNearby] = useState(false);
+  const [nearby, setNearby] = useState<Discovery | null>(null);
   const [showHelp, setShowHelp] = useState(true);
   const [input] = useState(createInput);
   const wake = useRef<() => void>(() => {});
   const paused = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const inspectButton = useRef<HTMLButtonElement>(null);
-  const nearbyRef = useRef(false);
+  const nearbyRef = useRef<Discovery | null>(null);
   const cameraLook = useRef<CameraLook>({ yaw: 0, pitch: 0, observing: false });
   const lookPointer = useRef<{ id: number; x: number; y: number; startX: number; startY: number; started: boolean } | null>(null);
   const hasLooked = useRef(false);
@@ -70,8 +70,8 @@ export function Explorer() {
     const respectPreference = () => {
       if (preference.matches) {
         clearInput();
-        nearbyRef.current = false;
-        setNearby(false);
+        nearbyRef.current = null;
+        setNearby(null);
         dialog.current?.close();
         setStatus("reduced");
       }
@@ -90,19 +90,19 @@ export function Explorer() {
   const onReady = useCallback(() => setStatus("ready"), []);
   const onFailure = useCallback(() => {
     clearInput();
-    nearbyRef.current = false;
-    setNearby(false);
+    nearbyRef.current = null;
+    setNearby(null);
     dialog.current?.close();
     setStatus("failed");
   }, [clearInput]);
 
-  const onNear = useCallback((value: boolean) => {
+  const onNear = useCallback((value: Discovery | null) => {
     nearbyRef.current = value;
     setNearby(value);
   }, []);
 
-  const inspect = useCallback(() => {
-    if (!nearbyRef.current || !dialog.current || dialog.current.open) return;
+  const inspect = useCallback((id?: string) => {
+    if (!nearbyRef.current || (id !== undefined && nearbyRef.current.id !== id) || !dialog.current || dialog.current.open) return;
     paused.current = true;
     clearInput();
     dialog.current.showModal();
@@ -226,7 +226,7 @@ export function Explorer() {
           <SceneBoundary onFailure={onFailure}>
             <LunarScene
               input={input} wakeRef={wake} paused={paused} quality={quality} auto={qualityMode === "auto"}
-              observing={observing} lookRef={cameraLook}
+              points={points} observing={observing} lookRef={cameraLook}
               onReady={onReady} onFailure={onFailure} onNear={onNear}
               onInspect={inspect} onLowerQuality={setAutoQuality}
             />
@@ -244,7 +244,7 @@ export function Explorer() {
       {(status === "failed" || status === "reduced") && (
         <section className="scene-fallback">
           <h1>{status === "reduced" ? "Choose your view" : "The lunar scene is unavailable"}</h1>
-          <p>{status === "reduced" ? "Reduced motion is enabled. You can read the portfolio or choose to start the interactive scene." : "You can still access the project from the portfolio."}</p>
+          <p>{status === "reduced" ? "Reduced motion is enabled. You can read the portfolio or choose to start the interactive scene." : "You can browse the portfolio directly."}</p>
           <div className="field-actions">
             <Link className="field-button field-primary" href="/work">View Portfolio <span aria-hidden="true">↗</span></Link>
             {status === "reduced" && <button className="field-button field-secondary" onClick={start}>Start interactive scene</button>}
@@ -255,8 +255,8 @@ export function Explorer() {
       {status === "ready" && (
         <div className="surface-interface">
           <div className="surface-guide">
-            <h1>{meetflix.location}</h1>
-            <p role="status">{nearby ? "Relay within reach" : "Walk toward the dish to open the project."}</p>
+            <h1>{nearby?.name ?? points[0]?.name ?? destinationName}</h1>
+            {points.length > 0 && <p role="status">{nearby ? "Within reach" : "Approach a site to inspect its project."}</p>}
             <span className="touch-instruction">Hold a direction to walk · drag to look</span>
           </div>
           <div className="surface-tools">
@@ -325,22 +325,23 @@ export function Explorer() {
               ))}
             </div>
             {nearby && (
-              <button ref={inspectButton} className="field-button field-primary surface-inspect" onClick={inspect} aria-haspopup="dialog">
-                <kbd aria-hidden="true">E</kbd> Inspect relay <span aria-hidden="true">↗</span>
+              <button ref={inspectButton} className="field-button field-primary surface-inspect" onClick={() => inspect()} aria-haspopup="dialog">
+                <kbd aria-hidden="true">E</kbd> {nearby.action} <span aria-hidden="true">↗</span>
               </button>
             )}
           </div>
         </div>
       )}
 
-      <dialog className="explore-dialog" ref={dialog} onClose={resume} aria-labelledby="relay-project-title">
-        <div className="dialog-inner">
-          <p className="dialog-location">{meetflix.station} · {meetflix.location}</p>
-          <button className="dialog-close" onClick={() => dialog.current?.close()} aria-label="Close relay entry" autoFocus>×</button>
-          <h2 id="relay-project-title">{meetflix.name}</h2>
-          <p>This case study is in preparation.</p>
-          <Link className="field-button field-primary" href={meetflix.href}>View project entry <span aria-hidden="true">↗</span></Link>
-        </div>
+      <dialog className="explore-dialog" ref={dialog} onClose={resume} aria-labelledby="discovery-project-title">
+        {nearby && <div className="dialog-inner">
+          <p className="dialog-location">{nearby.label} · {nearby.name}</p>
+          <button className="dialog-close" onClick={() => dialog.current?.close()} aria-label="Close project entry" autoFocus>×</button>
+          <h2 id="discovery-project-title">{nearby.project.name}</h2>
+          {nearby.project.summary && <p>{nearby.project.summary}</p>}
+          {nearby.project.preparing && <p>This case study is in preparation.</p>}
+          <Link className="field-button field-primary" prefetch={false} href={nearby.project.href}>View project entry <span aria-hidden="true">↗</span></Link>
+        </div>}
       </dialog>
     </div>
   );

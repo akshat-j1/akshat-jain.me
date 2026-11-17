@@ -13,8 +13,10 @@ import { cameraRelativeAxes, type ExploreInput } from "./input";
 import { sunlight } from "./lighting";
 import { lowerQuality, qualityTiers, type Quality } from "./quality";
 import { CommunicationsRelay } from "./relay";
-import { createWalker, groundHeight, nearRelay, spawn, stepWalker } from "./simulation";
+import { createWalker, groundHeight, relay, spawn, stepWalker } from "./simulation";
 import { Terrain } from "./terrain";
+
+import { nearestDiscovery, type Discovery } from "../../content/worlds";
 
 export type SceneProps = {
   input: ExploreInput;
@@ -26,8 +28,9 @@ export type SceneProps = {
   lookRef: RefObject<CameraLook>;
   onReady: () => void;
   onFailure: () => void;
-  onNear: (near: boolean) => void;
-  onInspect: () => void;
+  points: readonly Discovery[];
+  onNear: (point: Discovery | null) => void;
+  onInspect: (id: string) => void;
   onLowerQuality: (quality: Quality) => void;
 };
 
@@ -60,8 +63,8 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
   const terrainNormal = useRef(new Vector3());
   const surfaceAlignment = useRef(new Quaternion());
   const heading = useRef(new Quaternion());
-  const [close, setClose] = useState(false);
-  const proximity = useRef(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const proximity = useRef<Discovery | null>(null);
   const ready = useRef(false);
   const awakeFor = useRef(0.75);
   const performance = useRef({ frames: 0, slow: 0 });
@@ -111,10 +114,10 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
     model.current.position.set(walker.x, groundHeight(walker.x, walker.z) + motion.current.groundOffset, walker.z);
     const animating = motion.current.update(walker.speed, seconds, groundHeight);
     const tracking = cameraRig(camera, walker, size.width, size.height, seconds, lookRef.current);
-    const nearby = nearRelay(walker);
+    const nearby = nearestDiscovery(props.points, walker.x, walker.z);
     if (proximity.current !== nearby) {
       proximity.current = nearby;
-      setClose(nearby);
+      setActiveId(nearby?.id ?? null);
       props.onNear(nearby);
     }
 
@@ -160,7 +163,7 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
       />
       <Terrain faultRock={assets.faultRock} rocks={assets.rocks} soil={assets.soil} normal={assets.normal} detail={assets.ejecta} craterSurface={assets.craterSurface} quality={props.quality} />
       <CelestialField brightStars={assets.brightStars} galaxy={assets.galaxy} albedo={assets.earth} clouds={assets.earthClouds} />
-      <CommunicationsRelay active={close} onInspect={props.onInspect} />
+      <CommunicationsRelay active={activeId === relay.id} onInspect={() => props.onInspect(relay.id)} />
       <Bootprints walker={player} />
       <FootfallDust walker={player} />
       <group ref={model} position={[spawn.x, 0, spawn.z]} rotation={[0, Math.PI, 0]}>

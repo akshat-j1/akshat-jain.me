@@ -1,12 +1,23 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { catalog } from "../content/projects";
+import { moon, relay } from "../content/worlds";
+import { projectHref } from "../content/catalog";
+
+const first = catalog.projects[0];
+const relayEntry = catalog.bindings.get(moon.id)?.find(point => point.id === relay.id);
+async function expectPortfolio(page: Page) {
+  if (first) await expect(page.getByRole("link", { name: first.name, exact: true }).first()).toBeVisible();
+  else await expect(page.getByText("No project entries are published yet.")).toBeVisible();
+}
+
 const sizes = [
   [320, 568], [375, 812], [390, 844], [430, 932],
   [768, 1024], [1280, 800], [1440, 900], [1920, 1080],
 ] as const;
 
 async function ready(page: Page) {
-  await expect(page.getByRole("heading", { name: "Communications relay" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible({ timeout: 20_000 });
 }
 
 test("landing and direct portfolio render at all eight sizes with zero scene asset requests", async ({ page }) => {
@@ -22,16 +33,19 @@ test("landing and direct portfolio render at all eight sizes with zero scene ass
     await expect(page.getByRole("link", { name: "Begin Exploration" })).toBeInViewport();
     await page.getByRole("link", { name: "View Portfolio" }).click();
     await expect(page.getByRole("heading", { name: "Portfolio" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "MEETFLIX" })).toBeVisible();
+    await expectPortfolio(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   }
 
-  await page.getByRole("link", { name: "MEETFLIX" }).click();
-  await expect(page.getByRole("heading", { name: "MEETFLIX" })).toBeVisible();
+  if (first) {
+    await page.locator(`a[href="${projectHref(first)}"]`).click();
+    await expect(page.getByRole("heading", { name: first.name, exact: true })).toBeVisible();
+  }
   expect(sceneRequests).toEqual([]);
 });
 
 test("keyboard traversal, dialog pause and focus return, quality, and repeated entry", async ({ page }) => {
+  test.skip(!relayEntry, "This case exercises a published relay assignment.");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
@@ -49,9 +63,9 @@ test("keyboard traversal, dialog pause and focus return, quality, and repeated e
   await page.keyboard.up("w");
 
   await page.keyboard.press("e");
-  const dialog = page.getByRole("dialog", { name: "MEETFLIX" });
+  const dialog = page.getByRole("dialog", { name: relayEntry!.project.name });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Close relay entry" })).toBeFocused();
+  await expect(dialog.getByRole("button", { name: "Close project entry" })).toBeFocused();
   await page.keyboard.down("s");
   await page.waitForTimeout(1150);
   await page.keyboard.up("s");
@@ -61,7 +75,7 @@ test("keyboard traversal, dialog pause and focus return, quality, and repeated e
   await expect(inspect).toBeVisible();
   await inspect.click();
   await dialog.getByRole("link", { name: "View project entry" }).click();
-  await expect(page).toHaveURL("/work/meetflix");
+  await expect(page).toHaveURL(relayEntry!.project.href);
   await page.getByRole("link", { name: "Explore", exact: true }).click();
   await ready(page);
   await expect(inspect).toHaveCount(0);
@@ -71,6 +85,7 @@ test("keyboard traversal, dialog pause and focus return, quality, and repeated e
 });
 
 test("portrait touch holds and pointer cancellation release movement", async ({ browser, baseURL }) => {
+  test.skip(!relayEntry, "This case exercises a published relay assignment.");
   const context = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
   try {
     const page = await context.newPage();
@@ -96,11 +111,11 @@ test("portrait touch holds and pointer cancellation release movement", async ({ 
     await expect(inspect).toBeVisible({ timeout: 15_000 });
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await inspect.tap();
-    const dialog = page.getByRole("dialog", { name: "MEETFLIX" });
+    const dialog = page.getByRole("dialog", { name: relayEntry!.project.name });
     await expect(dialog).toBeVisible();
     await page.setViewportSize({ width: 844, height: 390 });
-    await expect(dialog.getByRole("button", { name: "Close relay entry" })).toBeInViewport();
-    await dialog.getByRole("button", { name: "Close relay entry" }).tap();
+    await expect(dialog.getByRole("button", { name: "Close project entry" })).toBeInViewport();
+    await dialog.getByRole("button", { name: "Close project entry" }).tap();
     await expect(inspect).toBeVisible();
   } finally {
     await context.close();
@@ -113,7 +128,7 @@ test("reduced motion, unavailable WebGL, and no JavaScript retain direct project
   await expect(page.getByRole("heading", { name: "Choose your view" })).toBeVisible();
   await expect(page.locator("canvas")).toHaveCount(0);
   await page.getByRole("link", { name: "View Portfolio" }).click();
-  await expect(page.getByRole("link", { name: "MEETFLIX" })).toBeVisible();
+  await expectPortfolio(page);
 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.addInitScript(() => {
@@ -133,7 +148,7 @@ test("reduced motion, unavailable WebGL, and no JavaScript retain direct project
     const htmlPage = await context.newPage();
     await htmlPage.goto("/explore");
     await htmlPage.getByRole("link", { name: "View Portfolio" }).click();
-    await expect(htmlPage.getByRole("link", { name: "MEETFLIX" })).toBeVisible();
+    await expectPortfolio(htmlPage);
   } finally {
     await context.close();
   }
@@ -152,7 +167,7 @@ test("a delayed or failed model load keeps the portfolio link available", async 
   failRequest();
   await expect(page.getByRole("heading", { name: "The lunar scene is unavailable" })).toBeVisible();
   await page.getByRole("link", { name: "View Portfolio" }).click();
-  await expect(page.getByRole("link", { name: "MEETFLIX" })).toBeVisible();
+  await expectPortfolio(page);
 });
 
 test("a failed ejecta texture falls back to the base ground material", async ({ page }) => {
@@ -234,6 +249,7 @@ test("touch drag-to-look works on the open ground without stealing movement cont
 });
 
 test("losing focus drops a held key and allows a fresh movement command", async ({ page }) => {
+  test.skip(!relayEntry, "This case exercises a published relay assignment.");
   await page.goto("/explore");
   await ready(page);
   try {
