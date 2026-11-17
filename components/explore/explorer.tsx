@@ -46,6 +46,7 @@ export function Explorer() {
 
   const clearInput = useCallback(() => {
     input.clear();
+    lookPointer.current = null;
     wake.current();
   }, [input]);
 
@@ -122,6 +123,8 @@ export function Explorer() {
       const direction = directionFor(event.code);
       if (direction) {
         event.preventDefault();
+        // Auto-repeat after blur or a modal must not re-arm a released direction.
+        if (event.repeat && !input.has(event.code)) return;
         input.set(event.code, direction);
         wake.current();
       } else if (event.code === "KeyE") {
@@ -154,15 +157,16 @@ export function Explorer() {
     const move = (event: PointerEvent) => {
       const pointer = lookPointer.current;
       if (!pointer || pointer.id !== event.pointerId) return;
+      if (paused.current) return;
+      if (!pointer.started && Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) <= 5) return;
       const dx = event.clientX - pointer.x;
       const dy = event.clientY - pointer.y;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
-      pointer.started ||= Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 2;
-      if (!pointer.started) return;
+      pointer.started = true;
       if (event.cancelable) event.preventDefault();
       cameraLook.current.yaw = (cameraLook.current.yaw - dx * 0.0044) % (Math.PI * 2);
-      cameraLook.current.pitch = Math.max(-0.13, Math.min(0.38, cameraLook.current.pitch + dy * 0.0032));
+      cameraLook.current.pitch = Math.max(-0.51, Math.min(0.40, cameraLook.current.pitch + dy * 0.0032));
       if (!hasLooked.current) {
         hasLooked.current = true;
         setLooked(true);
@@ -208,7 +212,7 @@ export function Explorer() {
           data-testid="surface-canvas"
           data-looked={looked ? "true" : "false"}
           onPointerDown={(event) => {
-            if (!(event.target instanceof HTMLCanvasElement) || (event.pointerType === "mouse" && event.button !== 0)) return;
+            if (paused.current || lookPointer.current || !(event.target instanceof HTMLCanvasElement) || event.button !== 0) return;
             lookPointer.current = {
               id: event.pointerId,
               x: event.clientX,

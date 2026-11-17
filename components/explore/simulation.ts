@@ -1,27 +1,33 @@
 export const relay = { x: 1.7, z: -10, radius: 2.05, reach: 4.65 };
 export const spawn = { x: 0, z: 2.5 };
 export const boulders = [
-  { x: -3.2, z: -1, radius: 0.72 },
-  { x: 4.2, z: -3.6, radius: 0.78 },
-  { x: -5.6, z: -9.5, radius: 0.94 },
-  { x: 5.5, z: -15.8, radius: 1.18 },
-  { x: -8.3, z: 3, radius: 1.2 },
+  { x: -3.15, z: 2.0, radius: 1.33 },
+  { x: 3.95, z: -3.1, radius: 1.02 },
+  { x: -4.6, z: -10.5, radius: 1.11 },
+  { x: 6.3, z: -17.2, radius: 1.42 },
+  { x: -8.3, z: 3.0, radius: 1.22 },
 ] as const;
 
-export const craters = [
-  { x: 6.4, z: -5.7, radius: 3.25, depth: 0.74 },
-  { x: -4.7, z: -6.1, radius: 2.1, depth: 0.44 },
+type Crater = { x: number; z: number; radius: number; depth: number; breach?: number };
+
+export const craters: readonly Crater[] = [
+  { x: -5.85, z: -7.95, radius: 4.6, depth: 1.38, breach: 0.65 },
+  { x: 6.1, z: -5.8, radius: 3.5, depth: 0.83, breach: -1.15 },
   { x: 3.7, z: 3.4, radius: 1.45, depth: 0.23 },
-  { x: -8, z: -14, radius: 6.8, depth: 1.25 },
-  { x: 11, z: -7, radius: 5.7, depth: 1.2 },
-  { x: -21, z: 3, radius: 10, depth: 2.1 },
-  { x: 12, z: -29, radius: 9, depth: 2.1 },
-  { x: -12, z: 13, radius: 8, depth: 2.2 },
+  { x: -15.6, z: -16.5, radius: 6.4, depth: 1.33 },
+  { x: 9.9, z: -16.1, radius: 6.1, depth: 1.2, breach: 2.25 },
+  { x: -21, z: 3, radius: 10, depth: 1.9 },
+  { x: 12, z: -29, radius: 9, depth: 2.28 },
+  { x: -12, z: 13, radius: 8, depth: 1.9 },
+  { x: -2.9, z: -3.7, radius: 0.63, depth: 0.14 },
+  { x: -5.05, z: 3.42, radius: 0.97, depth: 0.21 },
+  { x: 3.35, z: -12.95, radius: 0.92, depth: 0.15 },
 ];
 
-type ElevationGrid = { width: number; height: number; values: Uint8Array | Uint16Array };
+type ElevationGrid = { width: number; height: number; values: Uint8Array | Uint16Array; mask?: Uint8Array };
 let elevationGrid: ElevationGrid | undefined;
 let regionalGrid: ElevationGrid | undefined;
+let basinGrid: ElevationGrid | undefined;
 
 /** Installs the NASA LOLA patch used by terrain rendering and walking contact. */
 export function installElevationGrid(grid: ElevationGrid) {
@@ -32,12 +38,18 @@ export function installRegionalGrid(grid: ElevationGrid) {
   regionalGrid = grid;
 }
 
+export function installBasinGrid(grid: ElevationGrid) {
+  basinGrid = grid;
+}
+
 export function clearElevationGrid() {
   elevationGrid = undefined;
   regionalGrid = undefined;
+  basinGrid = undefined;
 }
 
-function sampleGrid({ width, height, values }: ElevationGrid, a: number, b: number) {
+function sampleGrid(grid: ElevationGrid, a: number, b: number, values = grid.values) {
+  const { width, height } = grid;
   const u = Math.max(0, Math.min(1, a)) * (width - 1);
   const v = Math.max(0, Math.min(1, b)) * (height - 1);
   const x0 = Math.floor(u);
@@ -49,6 +61,11 @@ function sampleGrid({ width, height, values }: ElevationGrid, a: number, b: numb
   const top = values[y0 * width + x0] * (1 - dx) + values[y0 * width + x1] * dx;
   const bottom = values[y1 * width + x0] * (1 - dx) + values[y1 * width + x1] * dx;
   return top * (1 - dy) + bottom * dy;
+}
+
+export function basinRockExposure(x: number, z: number) {
+  if (!basinGrid?.mask) return 0.48;
+  return sampleGrid(basinGrid, 0.5 + x / 600, 0.5 + z / 600, basinGrid.mask) / 255;
 }
 
 export function smoothRange(low: number, high: number, value: number) {
@@ -85,27 +102,37 @@ function elevationHeight(x: number, z: number, distance: number) {
   const shear = geologyNoise(x * 0.073 + 4, z * 0.057) * 2.6;
   const rib = 1 - Math.abs(2 * geologyNoise((x + z * 0.31) * 0.29 + shear, z * 0.105) - 1);
   const breccia = geologyNoise(x * 0.43, z * 0.46);
-  const relief = scarp * ((rib * rib - 0.44) * 2.1 + (breccia - 0.5) * 0.68);
-  return local * (1 - blend) + (regional + relief) * blend;
+  const foothill = basinGrid ? 1 - smoothRange(38, 71, distance) * 0.64 : 1;
+  const relief = scarp * foothill * ((rib * rib - 0.44) * 2.45 + (breccia - 0.5) * 0.82);
+  const massif = geologyNoise(x * 0.024 + 32, z * 0.017 - 18);
+  return local * (1 - blend) + (regional * (0.87 + 0.4 * massif) + relief) * blend;
 }
 
 export function groundHeight(x: number, z: number) {
   const distance = Math.hypot(x, z);
   const localDetail = 1 - smoothRange(27, 64, distance);
   let height = elevationHeight(x, z, distance) + localDetail * (
-    (geologyNoise(x * 0.16, z * 0.18) - 0.5) * 0.31
-    + (geologyNoise(x * 0.56 + 16, z * 0.47) - 0.5) * 0.12);
+    (geologyNoise(x * 0.10 + 1, z * 0.13) - 0.5) * 0.49
+    + (geologyNoise(x * 0.32, z * 0.45) - 0.5) * 0.18);
+  if (basinGrid && distance > 36) {
+    // Blend outside the walking area; the ring walls never alter traversal or the relay pad.
+    const weight = smoothRange(36, 74, distance);
+    const far = (sampleGrid(basinGrid, 0.5 + x / 600, 0.5 + z / 600) - 16384) / 512;
+    height += (far - height) * weight;
+  }
   for (const crater of craters) {
     const dx = x - crater.x;
     const dz = z - crater.z;
     if (dx * dx + dz * dz > (crater.radius * 1.64) ** 2) continue;
     const angle = Math.atan2(dz, dx);
-    const rimRadius = 1 + 0.065 * Math.sin(angle * 3 + crater.x) + 0.025 * Math.cos(angle * 7 - crater.z);
+    const rimRadius = 1 + 0.085 * Math.sin(angle * 3 + crater.x) + 0.035 * Math.cos(angle * 7 - crater.z);
     const r = Math.hypot(dx, dz) / (crater.radius * rimRadius);
     const bowl = 1 - smoothRange(0.23, 0.98, r);
     const crest = Math.exp(-(((r - 1) / (r < 1 ? 0.11 : 0.19)) ** 2));
-    const apron = 0.055 * (1 - smoothRange(1.05, 1.52, r)) * smoothRange(0.9, 1.05, r);
-    height += crater.depth * ((0.24 + 0.047 * Math.sin(angle * 5 + crater.z)) * crest + apron - bowl);
+    const breach = crater.breach === undefined ? 1 : 1 - 0.78 * Math.max(0, Math.cos(angle - crater.breach)) ** 16;
+    const apron = 0.095 * (1 - smoothRange(1.02, 1.52, r)) * smoothRange(0.84, 1.02, r);
+    const slumps = (geologyNoise(x * 1.26, z * 1.13) - 0.5) * crest * 0.14;
+    height += crater.depth * ((0.29 + 0.095 * Math.sin(angle * 5 + crater.z)) * crest * breach + apron + slumps - bowl);
   }
   return height;
 }
@@ -148,7 +175,8 @@ function advance(player: Walker, horizontal: number, vertical: number, delta: nu
 
   player.speed = Math.hypot(player.vx, player.vz);
   if (inputLength > 0.04) {
-    const angle = Math.atan2(horizontal, vertical) - player.heading;
+    const direction = player.speed > 0.09 ? Math.atan2(player.vx, player.vz) : Math.atan2(horizontal, vertical);
+    const angle = direction - player.heading;
     player.heading += Math.atan2(Math.sin(angle), Math.cos(angle)) * (1 - Math.exp(-13 * delta));
   }
 }

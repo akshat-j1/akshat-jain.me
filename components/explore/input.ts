@@ -11,6 +11,16 @@ export function directionFor(code: string) {
   return keys[code];
 }
 
+export function cameraRelativeAxes(horizontal: number, vertical: number, forwardX: number, forwardZ: number) {
+  const length = Math.hypot(forwardX, forwardZ);
+  if (length < 1e-4) return { x: horizontal, z: vertical };
+  // Project the view onto the ground. Screen-right is perpendicular to forward.
+  return {
+    x: (-forwardZ * horizontal - forwardX * vertical) / length,
+    z: (forwardX * horizontal - forwardZ * vertical) / length,
+  };
+}
+
 export function createInput() {
   const held = new Map<string, Direction>();
   return {
@@ -19,6 +29,9 @@ export function createInput() {
     },
     release(id: string) {
       held.delete(id);
+    },
+    has(id: string) {
+      return held.has(id);
     },
     clear() {
       held.clear();

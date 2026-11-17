@@ -43,7 +43,9 @@ export function createAstronautMotion({ scene, animations }: GLTF) {
   const mixer = new AnimationMixer(scene);
   const stride = mixer.clipAction(walk).play();
   const idle = mixer.clipAction(new AnimationClip("Breathing", 2.7, idleTracks)).play();
+  const toePosition = new Vector3();
   let weight = 0;
+  let lift = 0;
 
   return {
     groundOffset,
@@ -53,19 +55,21 @@ export function createAstronautMotion({ scene, animations }: GLTF) {
       if (target === 0 && weight < 0.012) weight = 0;
       stride.weight = weight;
       stride.timeScale = Math.max(0.55, speed / 2.1);
-      idle.weight = 1;
+      idle.weight = 1 - weight;
       mixer.update(delta);
       if (toes.length && scene.parent) {
+        scene.parent.position.y += lift;
         scene.updateWorldMatrix(true, true);
         let lowestClearance = Number.POSITIVE_INFINITY;
-        const world = new Vector3();
         for (const toe of toes) {
-          toe.getWorldPosition(world);
-          lowestClearance = Math.min(lowestClearance, world.y - groundAt(world.x, world.z));
+          toe.getWorldPosition(toePosition);
+          lowestClearance = Math.min(lowestClearance, toePosition.y - groundAt(toePosition.x, toePosition.z));
         }
-        const correction = toeGroundCorrection(lowestClearance, delta);
-        if (correction !== 0) {
-          scene.parent.position.y += correction;
+        // Toe joints sit just above the sole. Keep small corrections across frames.
+        const groundedLift = Math.max(-0.12, Math.min(0.12, lift + toeGroundCorrection(lowestClearance - 0.025, delta)));
+        if (groundedLift !== lift) {
+          scene.parent.position.y += groundedLift - lift;
+          lift = groundedLift;
           scene.parent.updateMatrixWorld(true);
         }
       }

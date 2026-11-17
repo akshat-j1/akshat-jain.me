@@ -12,7 +12,7 @@ async function ready(page: Page) {
 test("landing and direct portfolio render at all eight sizes with zero scene asset requests", async ({ page }) => {
   const sceneRequests: string[] = [];
   page.on("request", (request) => {
-    if (/\/lunar\/(?:astronaut|earth-|lunar-height|copernicus-relief|regolith)/.test(request.url())) sceneRequests.push(request.url());
+    if (/\/lunar\/(?:astronaut|earth-|ejecta-detail|lunar-height|copernicus-relief|basin-relief|regolith)/.test(request.url())) sceneRequests.push(request.url());
   });
 
   for (const [width, height] of sizes) {
@@ -153,6 +153,21 @@ test("a delayed or failed model load keeps the portfolio link available", async 
   await expect(page.getByRole("heading", { name: "The lunar scene is unavailable" })).toBeVisible();
   await page.getByRole("link", { name: "View Portfolio" }).click();
   await expect(page.getByRole("link", { name: "MEETFLIX" })).toBeVisible();
+});
+
+test("a failed ejecta texture falls back to the base ground material", async ({ page }) => {
+  await page.route("**/lunar/ejecta-detail.webp", (route) => route.abort());
+  await page.goto("/explore");
+  await ready(page);
+  await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Portfolio" })).toBeVisible();
+});
+
+test("an unavailable basin atlas keeps exploration available", async ({ page }) => {
+  await page.route("**/lunar/basin-relief.png", (route) => route.abort());
+  await page.goto("/explore");
+  await ready(page);
+  await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible();
 });
 
 test("the canvas resizes across the matrix and context loss offers portfolio access", async ({ page }) => {

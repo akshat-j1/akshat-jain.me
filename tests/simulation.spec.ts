@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createInput, directionFor } from "../components/explore/input";
 import { toeGroundCorrection } from "../components/explore/foot-contact";
-import { clearElevationGrid, createWalker, groundHeight, installElevationGrid, installRegionalGrid, nearRelay, relay, stepWalker } from "../components/explore/simulation";
+import { clearElevationGrid, createWalker, groundHeight, installBasinGrid, installElevationGrid, installRegionalGrid, nearRelay, relay, stepWalker } from "../components/explore/simulation";
 
 function walk(player: ReturnType<typeof createWalker>, x: number, z: number, duration: number, fps = 60) {
   for (let frame = 0; frame < duration * fps; frame++) stepWalker(player, x, z, 1 / fps);
@@ -93,4 +93,17 @@ test("regional relief blends into the horizon without moving the spawn or relay"
     clearElevationGrid();
   }
   expect(groundHeight(0, -90)).toBe(horizon);
+});
+
+test("the outer basin blends in beyond the complete walking bounds", () => {
+  const corners = [[-15, -25], [15, -25], [-15, 12], [15, 12]] as const;
+  const heights = corners.map(([x, z]) => groundHeight(x, z));
+  try {
+    installBasinGrid({ width: 2, height: 2, values: new Uint16Array(4).fill(16384 + 512 * 20) });
+    expect(corners.map(([x, z]) => groundHeight(x, z))).toEqual(heights);
+    expect(groundHeight(0, -100)).toBe(20);
+    expect(Math.abs(groundHeight(0, -36.01) - groundHeight(0, -35.99))).toBeLessThan(0.03);
+  } finally {
+    clearElevationGrid();
+  }
 });

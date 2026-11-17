@@ -2,17 +2,18 @@ import { Mesh, MeshStandardMaterial, NoColorSpace, RepeatWrapping, SRGBColorSpac
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { lunarAssets } from "./assets";
-import { clearElevationGrid, installElevationGrid, installRegionalGrid } from "./simulation";
+import { clearElevationGrid, installBasinGrid, installElevationGrid, installRegionalGrid } from "./simulation";
 
 export type SurfaceAssets = {
   astronaut: GLTF;
   soil: Texture;
   normal: Texture;
+  ejecta: Texture | null;
   earth: Texture;
   earthClouds: Texture;
 };
 
-async function loadElevation(path: string, signal: AbortSignal, packed = false) {
+async function loadElevation(path: string, signal: AbortSignal, format: "luma" | "rg" | "rg-and-mask" = "luma") {
   const response = await fetch(path, { signal });
   if (!response.ok) throw new Error("Lunar elevation data unavailable");
   const bitmap = await createImageBitmap(await response.blob(), { colorSpaceConversion: "none" });
@@ -24,11 +25,14 @@ async function loadElevation(path: string, signal: AbortSignal, packed = false) 
     if (!context) throw new Error("Lunar elevation data could not be decoded");
     context.drawImage(bitmap, 0, 0);
     const rgba = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    const packed = format !== "luma";
     const values = packed ? new Uint16Array(bitmap.width * bitmap.height) : new Uint8Array(bitmap.width * bitmap.height);
+    const mask = format === "rg-and-mask" ? new Uint8Array(values.length) : undefined;
     for (let i = 0; i < values.length; i++) {
       values[i] = packed ? rgba[i * 4] * 256 + rgba[i * 4 + 1] : rgba[i * 4];
+      if (mask) mask[i] = rgba[i * 4 + 2];
     }
-    return { width: bitmap.width, height: bitmap.height, values };
+    return { width: bitmap.width, height: bitmap.height, values, mask };
   } finally {
     bitmap.close();
   }
@@ -55,6 +59,7 @@ export function disposeSurfaceAssets(assets: SurfaceAssets) {
   disposeAstronaut(assets.astronaut);
   assets.soil.dispose();
   assets.normal.dispose();
+  assets.ejecta?.dispose();
   assets.earth.dispose();
   assets.earthClouds.dispose();
   clearElevationGrid();
@@ -63,7 +68,7 @@ export function disposeSurfaceAssets(assets: SurfaceAssets) {
 export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAssets> {
   const textures = new TextureLoader();
   const gltf = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const [astronaut, soil, normal, earth, earthClouds, elevation, regional] = await Promise.allSettled([
+  const [astronaut, soil, normal, earth, earthClouds, elevation, regional, ejecta, basin] = await Promise.allSettled([
     fetch(lunarAssets.astronaut, { signal }).then(async (response) => {
       if (!response.ok) throw new Error("Spacesuit unavailable");
       return gltf.parseAsync(await response.arrayBuffer(), "/lunar/");
@@ -73,14 +78,16 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     textures.loadAsync(lunarAssets.earth),
     textures.loadAsync(lunarAssets.earthClouds),
     loadElevation(lunarAssets.elevation, signal),
-    loadElevation(lunarAssets.regionalElevation, signal, true),
+    loadElevation(lunarAssets.regionalElevation, signal, "rg"),
+    textures.loadAsync(lunarAssets.ejectaDetail),
+    loadElevation(lunarAssets.basinElevation, signal, "rg-and-mask"),
   ]);
 
   if (signal.aborted || astronaut.status !== "fulfilled" || soil.status !== "fulfilled" || normal.status !== "fulfilled"
     || earth.status !== "fulfilled" || earthClouds.status !== "fulfilled" || elevation.status !== "fulfilled"
     || regional.status !== "fulfilled") {
     if (astronaut.status === "fulfilled") disposeAstronaut(astronaut.value);
-    for (const texture of [soil, normal, earth, earthClouds]) {
+    for (const texture of [soil, normal, earth, earthClouds, ejecta]) {
       if (texture.status === "fulfilled") texture.value.dispose();
     }
     throw new Error("Lunar assets unavailable");
@@ -88,9 +95,12 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
 
   installElevationGrid(elevation.value);
   installRegionalGrid(regional.value);
+  if (basin.status === "fulfilled") installBasinGrid(basin.value);
   soil.value.colorSpace = earth.value.colorSpace = SRGBColorSpace;
   earthClouds.value.colorSpace = NoColorSpace;
-  for (const texture of [soil.value, normal.value]) {
+  const detail = ejecta.status === "fulfilled" ? ejecta.value : null;
+  for (const texture of [soil.value, normal.value, detail]) {
+    if (!texture) continue;
     texture.wrapS = texture.wrapT = RepeatWrapping;
     texture.anisotropy = 4;
   }
@@ -114,6 +124,7 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     astronaut: astronaut.value,
     soil: soil.value,
     normal: normal.value,
+    ejecta: detail,
     earth: earth.value,
     earthClouds: earthClouds.value,
   };

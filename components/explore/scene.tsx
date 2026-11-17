@@ -2,13 +2,13 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { ACESFilmicToneMapping, Group, PCFShadowMap, Quaternion, Vector3 } from "three";
+import { AgXToneMapping, Group, PCFShadowMap, Quaternion, Vector3 } from "three";
 import { disposeSurfaceAssets, loadSurfaceAssets, type SurfaceAssets } from "./asset-loader";
 import { createAstronautMotion } from "./astronaut";
 import { createCameraRig, type CameraLook } from "./camera";
 import { CelestialField } from "./celestial";
 import { FootfallDust } from "./footfall-dust";
-import type { ExploreInput } from "./input";
+import { cameraRelativeAxes, type ExploreInput } from "./input";
 import { sunlight } from "./lighting";
 import { lowerQuality, qualityTiers, type Quality } from "./quality";
 import { CommunicationsRelay } from "./relay";
@@ -55,6 +55,10 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
   const model = useRef<Group>(null);
   const motion = useRef<ReturnType<typeof createAstronautMotion> | null>(null);
   const [cameraRig] = useState(createCameraRig);
+  const viewForward = useRef(new Vector3());
+  const terrainNormal = useRef(new Vector3());
+  const surfaceAlignment = useRef(new Quaternion());
+  const heading = useRef(new Quaternion());
   const [close, setClose] = useState(false);
   const proximity = useRef(false);
   const ready = useRef(false);
@@ -83,23 +87,28 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
     if (document.hidden || !motion.current || !model.current) return;
     const seconds = delta > 0.15 ? 1 / 60 : Math.min(delta, 0.1);
     const walker = player.current;
-    lookRef.current.observing = props.observing;
-    const moving = !props.paused.current && props.input.moving;
     if (props.paused.current) {
       walker.vx = walker.vz = walker.speed = 0;
-    } else {
-      stepWalker(walker, props.input.axis("left", "right"), props.input.axis("up", "down"), seconds);
+      return;
     }
+    lookRef.current.observing = props.observing;
+    const horizontal = props.input.axis("left", "right");
+    const vertical = props.input.axis("up", "down");
+    const moving = horizontal !== 0 || vertical !== 0;
+    camera.getWorldDirection(viewForward.current);
+    const { x, z } = cameraRelativeAxes(horizontal, vertical, viewForward.current.x, viewForward.current.z);
+    stepWalker(walker, x, z, seconds);
 
     const terrainStep = 0.42;
     const slopeX = (groundHeight(walker.x + terrainStep, walker.z) - groundHeight(walker.x - terrainStep, walker.z)) / (terrainStep * 2);
     const slopeZ = (groundHeight(walker.x, walker.z + terrainStep) - groundHeight(walker.x, walker.z - terrainStep)) / (terrainStep * 2);
-    const terrainNormal = new Vector3(-slopeX, 1, -slopeZ).normalize();
-    const surfaceAlignment = new Quaternion().setFromUnitVectors(worldUp, terrainNormal);
-    const heading = new Quaternion().setFromAxisAngle(worldUp, walker.heading);
-    model.current.quaternion.slerp(surfaceAlignment.multiply(heading), 1 - Math.exp(-7 * seconds));
+    const slope = Math.max(1, Math.hypot(slopeX, slopeZ) / 0.26);
+    terrainNormal.current.set(-slopeX / slope, 1, -slopeZ / slope).normalize();
+    surfaceAlignment.current.setFromUnitVectors(worldUp, terrainNormal.current);
+    heading.current.setFromAxisAngle(worldUp, walker.heading);
+    model.current.quaternion.slerp(surfaceAlignment.current.multiply(heading.current), 1 - Math.exp(-10 * seconds));
     model.current.position.set(walker.x, groundHeight(walker.x, walker.z) + motion.current.groundOffset, walker.z);
-    motion.current.update(walker.speed, seconds, groundHeight);
+    const animating = motion.current.update(walker.speed, seconds, groundHeight);
     const tracking = cameraRig(camera, walker, size.width, size.height, seconds, lookRef.current);
     const nearby = nearRelay(walker);
     if (proximity.current !== nearby) {
@@ -126,18 +135,18 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
     }
 
     awakeFor.current = moving ? 0.24 : awakeFor.current - seconds;
-    if (!props.paused.current && (moving || walker.speed > 0.015 || tracking || awakeFor.current > 0)) invalidate();
+    if (moving || animating || walker.speed > 0.015 || tracking || awakeFor.current > 0) invalidate();
   });
 
   const shadowSize = qualityTiers[props.quality].shadows;
   return (
     <>
       <color attach="background" args={["#040506"]} />
-      <hemisphereLight color="#d6dce5" groundColor="#898782" intensity={0.29} />
+      <hemisphereLight color="#e0e7fa" groundColor="#8b8e99" intensity={0.54} />
       <directionalLight
         position={sunlight}
-        intensity={5.4}
-        color="#fffdf8"
+        intensity={5.78}
+        color="#fffefb"
         castShadow={shadowSize > 0}
         shadow-mapSize={[shadowSize || 512, shadowSize || 512]}
         shadow-camera-left={-18}
@@ -148,7 +157,7 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
         shadow-bias={-0.00018}
         shadow-normalBias={0.014}
       />
-      <Terrain soil={assets.soil} normal={assets.normal} quality={props.quality} />
+      <Terrain soil={assets.soil} normal={assets.normal} detail={assets.ejecta} quality={props.quality} />
       <CelestialField albedo={assets.earth} clouds={assets.earthClouds} />
       <CommunicationsRelay active={close} onInspect={props.onInspect} />
       <FootfallDust walker={player} />
@@ -192,7 +201,7 @@ export default function LunarScene(props: SceneProps) {
       dpr={[1, qualityTiers[props.quality].dpr]}
       shadows={qualityTiers[props.quality].shadows > 0 ? { type: PCFShadowMap } : false}
       camera={{ fov: 48, near: 0.12, far: 660, position: [2.6, 3.3, 9.75] }}
-      gl={{ antialias: false, alpha: false, powerPreference: "default", toneMapping: ACESFilmicToneMapping }}
+      gl={{ antialias: false, alpha: false, powerPreference: "default", toneMapping: AgXToneMapping, toneMappingExposure: 1.21 }}
     >
       <RendererLifecycle wakeRef={props.wakeRef} onFailure={props.onFailure} />
       <Traverse assets={assets} props={props} lookRef={lookRef} />

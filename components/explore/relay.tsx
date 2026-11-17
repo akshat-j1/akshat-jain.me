@@ -97,7 +97,8 @@ function ServiceCable() {
 export function CommunicationsRelay({ active, onInspect }: { active: boolean; onInspect: () => void }) {
   const reflector = useRef<Group>(null);
   const bolts = useRef<InstancedMesh>(null);
-  const origin: [number, number, number] = [relay.x, groundHeight(relay.x, relay.z) - 0.07, relay.z];
+  const baseY = groundHeight(relay.x, relay.z) - 0.07;
+  const origin: [number, number, number] = [relay.x, baseY, relay.z];
   const dish = useMemo(() => {
     const points = Array.from({ length: 20 }, (_, i) => {
       const radius = 1.25 * i / 19;
@@ -113,8 +114,10 @@ export function CommunicationsRelay({ active, onInspect }: { active: boolean; on
 
   const mounts = useMemo(() => Array.from({ length: 3 }, (_, i) => {
     const angle = i * Math.PI * 2 / 3 + 0.19;
-    return new Vector3(Math.cos(angle) * 1.02, 0.03, Math.sin(angle) * 1.02);
-  }), []);
+    const x = Math.cos(angle) * 1.02;
+    const z = Math.sin(angle) * 1.02;
+    return new Vector3(x, groundHeight(relay.x + x, relay.z + z) - baseY + 0.025, z);
+  }), [baseY]);
 
   useEffect(() => {
     if (!bolts.current) return;
@@ -165,7 +168,7 @@ export function CommunicationsRelay({ active, onInspect }: { active: boolean; on
         <cylinderGeometry args={[0.3, 0.3, 0.16, 12]} />
         <meshStandardMaterial color="#68675f" metalness={0.55} roughness={0.66} />
       </mesh>
-      <group ref={reflector} position={[0, 1.48, 0]} rotation={[0.77, 0, -0.42]}>
+      <group ref={reflector} position={[0, 1.48, 0]} rotation={[0.77, 0, -0.42]} scale={0.92}>
         <mesh geometry={dish} castShadow>
           <meshStandardMaterial color="#d1cbbf" metalness={0.16} roughness={0.58} side={DoubleSide} />
         </mesh>
