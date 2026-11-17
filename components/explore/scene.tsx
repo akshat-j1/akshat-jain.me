@@ -7,6 +7,7 @@ import { disposeSurfaceAssets, loadSurfaceAssets, type SurfaceAssets } from "./a
 import { createAstronautMotion } from "./astronaut";
 import { createCameraRig, type CameraLook } from "./camera";
 import { CelestialField } from "./celestial";
+import { Bootprints } from "./bootprints";
 import { FootfallDust } from "./footfall-dust";
 import { cameraRelativeAxes, type ExploreInput } from "./input";
 import { sunlight } from "./lighting";
@@ -142,11 +143,11 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
   return (
     <>
       <color attach="background" args={["#040506"]} />
-      <hemisphereLight color="#e0e7fa" groundColor="#8b8e99" intensity={0.94} />
+      <hemisphereLight color="#d1ddff" groundColor="#aba6a4" intensity={0.94} />
       <directionalLight
         position={sunlight}
         intensity={5.78}
-        color="#fffefb"
+        color="#fff1de"
         castShadow={shadowSize > 0}
         shadow-mapSize={[shadowSize || 512, shadowSize || 512]}
         shadow-camera-left={-18}
@@ -157,9 +158,10 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
         shadow-bias={-0.00018}
         shadow-normalBias={0.014}
       />
-      <Terrain soil={assets.soil} normal={assets.normal} detail={assets.ejecta} craterSurface={assets.craterSurface} quality={props.quality} />
-      <CelestialField albedo={assets.earth} clouds={assets.earthClouds} />
+      <Terrain faultRock={assets.faultRock} rocks={assets.rocks} soil={assets.soil} normal={assets.normal} detail={assets.ejecta} craterSurface={assets.craterSurface} quality={props.quality} />
+      <CelestialField brightStars={assets.brightStars} galaxy={assets.galaxy} albedo={assets.earth} clouds={assets.earthClouds} />
       <CommunicationsRelay active={close} onInspect={props.onInspect} />
+      <Bootprints walker={player} />
       <FootfallDust walker={player} />
       <group ref={model} position={[spawn.x, 0, spawn.z]} rotation={[0, Math.PI, 0]}>
         <primitive object={assets.astronaut.scene} />

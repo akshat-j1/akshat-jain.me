@@ -12,7 +12,7 @@ async function ready(page: Page) {
 test("landing and direct portfolio render at all eight sizes with zero scene asset requests", async ({ page }) => {
   const sceneRequests: string[] = [];
   page.on("request", (request) => {
-    if (/\/lunar\/(?:astronaut|earth-|ejecta-detail|lunar-height|copernicus-relief|basin-relief|crater-surface|regolith)/.test(request.url())) sceneRequests.push(request.url());
+    if (/\/lunar\/(?:astronaut|earth-|ejecta-detail|lunar-height|copernicus-relief|basin-relief|crater-surface|regolith|bright-stars|fault-rock|galactic-light|moon_rock|trail-impacts)/.test(request.url())) sceneRequests.push(request.url());
   });
 
   for (const [width, height] of sizes) {
@@ -163,7 +163,7 @@ test("a failed ejecta texture falls back to the base ground material", async ({ 
   await expect(page.getByRole("link", { name: "Portfolio" })).toBeVisible();
 });
 
-for (const asset of ["basin-relief.png", "crater-surface.webp"]) {
+for (const asset of ["basin-relief.png", "crater-surface.webp", "trail-impacts.png", "moon_rock_02.glb", "galactic-light.webp"]) {
   test(`exploration remains available without ${asset}`, async ({ page }) => {
     await page.route(`**/lunar/${asset}`, (route) => route.abort());
     await page.goto("/explore");

@@ -3,7 +3,7 @@ import { sunlight } from "./lighting";
 
 const sunDirection = new Vector3(...sunlight).normalize();
 
-export function createRegolithMaterial(albedo: Texture, normal: Texture, detail: Texture | null, craterSurface: Texture | null) {
+export function createRegolithMaterial(albedo: Texture, normal: Texture, detail: Texture | null, craterSurface: Texture | null, bedrock: Texture | null) {
   const material = new MeshStandardMaterial({
     color: "#f4f3f0",
     map: albedo,
@@ -15,6 +15,7 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
 
   material.onBeforeCompile = (shader) => {
     if (detail) shader.uniforms.ejectaDetail = { value: detail };
+    if (bedrock) shader.uniforms.bedrock = { value: bedrock };
     if (craterSurface) shader.uniforms.craterSurface = { value: craterSurface };
     shader.uniforms.lunarSun = { value: sunDirection };
     shader.vertexShader = shader.vertexShader
@@ -36,6 +37,7 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
         varying vec4 vGroundSurface;
         varying vec3 vGroundPosition;
         uniform vec3 lunarSun;
+        ${bedrock ? "uniform sampler2D bedrock;" : ""}
         ${craterSurface ? "uniform sampler2D craterSurface;" : ""}
         ${detail ? "uniform sampler2D ejectaDetail;" : ""}
       `)
@@ -68,6 +70,23 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
           dust = mix(dust, vec3(0.12, 0.116, 0.108) + dust * 0.52, clast * 0.82);
           dust *= 1.0 + (rockFace.b - 0.25) * hillside * ledge * 0.31;
         ` : "float clast = fragments * 0.34;"}
+        ${bedrock ? `
+          // Project the exposed mineral faces through the world. Cross-fading
+          // vertical and horizontal projections keeps the cracks off the loose fines.
+          vec3 p = vGroundPosition;
+          vec3 weights = abs(normalize(cross(dFdx(p), dFdy(p))));
+          weights = max(vec3(0.001), weights * weights);
+          weights /= weights.x + weights.y + weights.z;
+          vec2 offset = 0.055 * vec2(sin(p.z * 0.34) + sin(p.x * 0.17), sin(p.x * 0.23));
+          vec3 faceX = texture2D(bedrock, vec2(p.z * 0.14, p.y * 0.22 - p.z * 0.035) + offset).rgb;
+          vec3 faceZ = texture2D(bedrock, vec2(p.x * 0.14, p.y * 0.22 + p.x * 0.028) - offset).rgb;
+          vec3 floorRock = texture2D(bedrock, mat2(0.8,0.6,-0.6,0.8) * p.xz * 0.18 + offset).rgb;
+          vec3 fault = weights.x * faceX + weights.y * floorRock + weights.z * faceZ;
+          float exposure = smoothstep(0.09, 0.69, ledge + fragments * 0.14);
+          float facets = clamp(1.0 + dot(fault.gb - 0.5, vec2(-0.76,1.16)), 0.52, 1.45);
+          float minerals = clamp(0.53 + (fault.r - 0.22) * 1.45, 0.47, 1.54);
+          dust *= mix(vec3(1.0), vec3(0.99, 1.02, 1.07) * minerals * facets, exposure * 0.86);
+        ` : ""}
         diffuseColor.rgb *= dust * mix(1.04, 1.24, ledge);
       `)
       .replace("#include <roughnessmap_fragment>", `
@@ -114,6 +133,6 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
       `);
     }
   };
-  material.customProgramCacheKey = () => `regolith-${Boolean(detail)}-${Boolean(craterSurface)}`;
+  material.customProgramCacheKey = () => `regolith-${Boolean(detail)}-${Boolean(craterSurface)}-${Boolean(bedrock)}`;
   return material;
 }

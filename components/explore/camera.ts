@@ -57,7 +57,7 @@ export function createCameraRig() {
 
     const forward = (portrait ? 3.35 : 3.90) * (1 + 0.52 * (zoom - 1));
     const shoulder = portrait ? 0.13 : 0.35;
-    const targetHeight = (portrait ? 0.95 : 1.39) + 1.85 * (zoom - 1)
+    const targetHeight = (portrait ? 1.06 : 1.70) + 1.85 * (zoom - 1)
       - Math.tan(pitch) * (5.9 + 5.2 * (zoom - 1));
     focus.set(pivot.x + shoulder * c - forward * s, ground + targetHeight, pivot.z - shoulder * s - forward * c);
     camera.lookAt(focus);

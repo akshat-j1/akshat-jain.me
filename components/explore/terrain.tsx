@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { BufferAttribute, Color, IcosahedronGeometry, InstancedMesh, Object3D, Vector2, type Texture } from "three";
 import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
+import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
+import { SurveyRocks } from "./survey-rocks";
 import { sunlight } from "./lighting";
 import { createRegolithMaterial } from "./regolith-material";
 import { basinRockExposure, boulders, craters, geologyNoise, groundHeight, relay, smoothRange } from "./simulation";
@@ -74,13 +76,16 @@ function terrainGeometry(quality: Quality) {
     const pad = (1 - smoothRange(0.65, 2.1, Math.hypot((x - relay.x) * 0.83, z - relay.z))) * (0.65 + broken * 0.35);
     const fragments = Math.min(1, 0.15 + mottle * 0.25 + broken * 0.21 + apron * 0.81) * (1 - pad * 0.49);
     const broad = geologyNoise(x * 0.048 + 3, z * 0.045);
-    const foreground = (0.70 + broad * 0.26 + 0.25 * mottle + 0.14 * broken + 0.13 * apron) * (1 - 0.18 * pad);
+    const foreground = (0.64 + broad * 0.42 + 0.25 * mottle + 0.14 * broken + 0.40 * apron) * (1 - 0.18 * pad);
     const distance = smoothRange(35, 79, Math.hypot(x, z));
     const strata = geologyNoise(x * 0.13 + y * 0.39, z * 0.075 - y * 0.20);
     const exposed = basinRockExposure(x, z);
     const hillside = 0.59 + exposed * 0.66 + broad * 0.18 + strata * 0.15;
     const value = foreground * (1 - distance) + hillside * distance;
-    colors.set([value, value * (0.994 + distance * 0.013), value * (0.984 + distance * 0.052)], index * 3);
+    // Fresh ejecta catches warm sunlight, while consolidated basin floors run cooler.
+    const fresh = smoothRange(0.2, 0.7, apron + broken * 0.35);
+    colors.set([value * (1.02 + 0.12 * fresh), value * (1.01 + 0.07 * fresh),
+      value * (1.03 + distance * 0.04 - 0.045 * fresh)], index * 3);
     surface.set([fragments, apron * 0.26 + distance * exposed * 0.30, sunVisibility(x, z, y), contactOcclusion(x, z)], index * 4);
   }
   geometry.setAttribute("uv", new BufferAttribute(uv, 2));
@@ -193,12 +198,12 @@ function Rocks({ count, kind, shadows, soil, normal }: {
   );
 }
 
-export function Terrain({ soil, normal, detail, craterSurface, quality }: {
-  soil: Texture; normal: Texture; detail: Texture | null; craterSurface: Texture | null; quality: Quality;
+export function Terrain({ soil, normal, detail, craterSurface, quality, rocks, faultRock }: {
+  faultRock: Texture | null; rocks: (GLTF | null)[]; soil: Texture; normal: Texture; detail: Texture | null; craterSurface: Texture | null; quality: Quality;
 }) {
   const geometry = useMemo(() => terrainGeometry(quality), [quality]);
   const detailed = quality !== "lite";
-  const material = useMemo(() => createRegolithMaterial(soil, normal, detailed ? detail : null, craterSurface), [soil, normal, detail, detailed, craterSurface]);
+  const material = useMemo(() => createRegolithMaterial(soil, normal, detailed ? detail : null, craterSurface, faultRock), [soil, normal, detail, detailed, craterSurface, faultRock]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 
@@ -208,7 +213,9 @@ export function Terrain({ soil, normal, detail, craterSurface, quality }: {
       <Rocks count={Math.round(qualityTiers[quality].rocks * 1.38)} kind="chips" shadows={false} soil={soil} normal={normal} />
       <Rocks count={Math.round(qualityTiers[quality].rocks * 0.52)} kind="cobbles" shadows={false} soil={soil} normal={normal} />
       <Rocks count={quality === "lite" ? 22 : 48} kind="blocks" shadows={detailed} soil={soil} normal={normal} />
-      <Rocks count={boulders.length} kind="slabs" shadows={detailed} soil={soil} normal={normal} />
+      {rocks.every(Boolean) ? rocks.map((rock, variant) => (
+        <SurveyRocks key={variant} asset={rock!} variant={variant} quality={quality} />
+      )) : <Rocks count={boulders.length} kind="slabs" shadows={detailed} soil={soil} normal={normal} />}
     </>
   );
 }

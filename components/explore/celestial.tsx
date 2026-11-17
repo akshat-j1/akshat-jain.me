@@ -1,58 +1,56 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { BufferAttribute, BufferGeometry, Group, Mesh, Vector3, type PointsMaterial, type ShaderMaterial, type Texture } from "three";
+import { BackSide, BufferAttribute, BufferGeometry, Group, Mesh, Vector3, type ShaderMaterial, type Texture } from "three";
 import { sunlight } from "./lighting";
 
-const earthDirection = new Vector3(-0.017, 0.225, -1).normalize();
+const earthDirection = new Vector3(0.068, 0.172, -1).normalize();
 const earthDistance = 500;
 const earthPosition = earthDirection.clone().multiplyScalar(earthDistance);
-// A modest increase over the 1.9° mean angular diameter for the composition.
-const earthRadius = Math.tan(Math.PI / 180 * 1.12) * earthDistance;
+// Art-directed angular size keeps the illuminated hemisphere legible from the trail.
+const earthRadius = Math.tan(Math.PI / 180 * 1.76) * earthDistance;
 const solarDayRate = Math.PI * 2 / (24 * 60 * 60);
 const sunDirection = new Vector3(...sunlight).normalize();
 
-function seededRandom(seed: number) {
-  let value = seed >>> 0;
-  return () => {
-    value = (value + 0x6d2b79f5) | 0;
-    let t = Math.imul(value ^ (value >>> 15), 1 | value);
-    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function Starfield() {
-  const material = useRef<PointsMaterial>(null);
-  const view = useMemo(() => new Vector3(), []);
+function Starfield({ catalog }: { catalog: ArrayBuffer | null }) {
   const stars = useMemo(() => {
-    const random = seededRandom(42117);
-    const count = 760;
+    const bytes = new DataView(catalog ?? new ArrayBuffer(0));
+    const count = Math.floor(bytes.byteLength / 8);
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
+    const light = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      const azimuth = random() * Math.PI * 2;
-      const height = random();
-      const horizontal = Math.sqrt(1 - height * height);
-      positions.set([Math.cos(azimuth) * horizontal * 550, height * 550, Math.sin(azimuth) * horizontal * 550], i * 3);
-      const brightness = 0.026 + random() ** 5 * 0.48;
-      colors.set([brightness * 0.9, brightness * 0.94, brightness], i * 3);
+      const offset = i * 8;
+      const lon = (bytes.getUint16(offset, true) + 0.5) / 4096 * Math.PI * 2;
+      const polar = (bytes.getUint16(offset + 2, true) + 0.5) / 2048 * Math.PI;
+      const radius = 545 * Math.sin(polar);
+      positions.set([-Math.cos(lon) * radius, 545 * Math.cos(polar), Math.sin(lon) * radius], i * 3);
+      for (let channel = 0; channel < 3; channel++) colors[i * 3 + channel] = bytes.getUint8(offset + 4 + channel) / 255;
+      light[i] = bytes.getUint8(offset + 7) / 255;
     }
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));
     geometry.setAttribute("color", new BufferAttribute(colors, 3));
+    geometry.setAttribute("magnitude", new BufferAttribute(light, 1));
     return geometry;
-  }, []);
+  }, [catalog]);
   useEffect(() => () => stars.dispose(), [stars]);
-  useFrame(({ camera }, delta) => {
-    if (!material.current) return;
-    const elevation = camera.getWorldDirection(view).y;
-    const exposure = Math.max(0, Math.min(1, (elevation - 0.06) / 0.34));
-    material.current.opacity += (0.37 + 0.37 * exposure - material.current.opacity) * (1 - Math.exp(-4 * delta));
-  });
-
   return (
-    <points geometry={stars} frustumCulled={false}>
-      <pointsMaterial ref={material} size={1} sizeAttenuation={false} vertexColors transparent opacity={0.16} depthWrite={false} />
+    <points geometry={stars} frustumCulled={false} rotation={[0.25, 1.78, -0.36, "ZXY"]}>
+      <shaderMaterial transparent depthWrite={false} vertexColors
+        vertexShader={`
+          attribute float magnitude;
+          varying vec3 tint;
+          void main() {
+            tint = color * (0.20 + magnitude * 0.66);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = 1.35 + magnitude * 2.0;
+          }`}
+        fragmentShader={`
+          varying vec3 tint;
+          void main() {
+            vec2 p = 2.0 * gl_PointCoord - 1.0;
+            gl_FragColor = vec4(tint, exp(-3.4 * dot(p,p)));
+          }`} />
     </points>
   );
 }
@@ -99,7 +97,7 @@ const earthFragment = `
     ground += vec3(0.40, 0.54, 0.72) * oceanGlint * 0.32;
     float cloudRelief = clamp(0.90 + (cloud - cloudShade) * 0.63, 0.70, 1.13);
     vec3 clouds = vec3(0.95, 0.98, 1.0) * lit * (0.21 + 1.13 * pow(sun, 0.55)) * cloudRelief;
-    vec3 result = mix(ground, clouds, cover * lit * 0.94);
+    vec3 result = mix(ground, clouds, cover * lit * 0.94) + vec3(0.0012, 0.0024, 0.0045) * (1.0 - lit);
     result += vec3(0.10, 0.30, 0.65) * limb * smoothstep(-0.036, 0.42, daylight) * 0.63;
     gl_FragColor = vec4(result, 1.0);
     #include <tonemapping_fragment>
@@ -107,10 +105,40 @@ const earthFragment = `
   }
 `;
 
-export function CelestialField({ albedo, clouds }: { albedo: Texture; clouds: Texture }) {
+const skyVertex = `
+  varying vec2 skyUv;
+  varying vec3 direction;
+  void main() {
+    skyUv = uv;
+    direction = mat3(modelMatrix) * position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const skyFragment = `
+  varying vec2 skyUv;
+  varying vec3 direction;
+  uniform sampler2D starMap;
+  uniform vec3 sun;
+  void main() {
+    vec3 ray = normalize(direction);
+    vec3 catalog = texture2D(starMap, skyUv).rgb;
+    float angle = length(ray - sun);
+    float disk = 1.0 - smoothstep(0.004, 0.006, angle);
+    float glare = 0.13 * exp(-angle * 33.0) + 0.29 * exp(-angle * 153.0);
+    // Display-referred exposure of the catalog, separate from terrestrial PBR.
+    vec3 sky = vec3(0.012, 0.019, 0.036) + pow(catalog, vec3(1.18)) * vec3(0.38, 0.46, 0.61);
+    gl_FragColor = vec4(sky + vec3(1.0, 0.91, 0.77) * (disk + glare), 1.0);
+  }
+`;
+
+export function CelestialField({ albedo, clouds, galaxy, brightStars }: { brightStars: ArrayBuffer | null; albedo: Texture; clouds: Texture; galaxy: Texture | null }) {
   const sky = useRef<Group>(null);
   const earth = useRef<Mesh>(null);
   const material = useRef<ShaderMaterial>(null);
+  const skyUniforms = useMemo(() => ({
+    starMap: { value: galaxy }, sun: { value: sunDirection },
+  }), [galaxy]);
   const uniforms = useMemo(() => ({
     landMap: { value: albedo },
     cloudMap: { value: clouds },
@@ -129,7 +157,12 @@ export function CelestialField({ albedo, clouds }: { albedo: Texture; clouds: Te
 
   return (
     <group ref={sky}>
-      <Starfield />
+      {galaxy && <mesh renderOrder={-10} rotation={[0.25, 1.78, -0.36, "ZXY"]}>
+        <sphereGeometry args={[610, 60, 32]} />
+        <shaderMaterial uniforms={skyUniforms} side={BackSide} depthWrite={false}
+          vertexShader={skyVertex} fragmentShader={skyFragment} />
+      </mesh>}
+      <Starfield catalog={brightStars} />
       <mesh ref={earth} position={earthPosition} scale={earthRadius} rotation={[0.08, -0.72, -0.19]}>
         <sphereGeometry args={[1, 48, 28]} />
         <shaderMaterial ref={material} uniforms={uniforms} vertexShader={earthVertex} fragmentShader={earthFragment} />

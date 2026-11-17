@@ -25,6 +25,7 @@ export const craters: readonly Crater[] = [
 ];
 
 type ElevationGrid = { width: number; height: number; values: Uint8Array | Uint16Array; mask?: Uint8Array };
+let trailGrid: ElevationGrid | undefined;
 let elevationGrid: ElevationGrid | undefined;
 let regionalGrid: ElevationGrid | undefined;
 let basinGrid: ElevationGrid | undefined;
@@ -42,7 +43,12 @@ export function installBasinGrid(grid: ElevationGrid) {
   basinGrid = grid;
 }
 
+export function installTrailGrid(grid: ElevationGrid) {
+  trailGrid = grid;
+}
+
 export function clearElevationGrid() {
+  trailGrid = undefined;
   elevationGrid = undefined;
   regionalGrid = undefined;
   basinGrid = undefined;
@@ -94,7 +100,7 @@ function elevationHeight(x: number, z: number, distance: number) {
     : 0;
   if (!regionalGrid) return local;
   const regional = (sampleGrid(regionalGrid, 0.5 + x / 600, 0.5 + z / 600) - 16946) * 0.0037;
-  const blend = smoothRange(22, 57, distance);
+  const blend = smoothRange(22, 57, distance) * (basinGrid ? 0.23 : 1);
   if (blend === 0) return local;
   // The measured rim sets the relief. Break up high scarps below the DEM's
   // sampling scale with stretched, irregular ribs and smaller block faces.
@@ -120,6 +126,10 @@ export function groundHeight(x: number, z: number) {
     const far = (sampleGrid(basinGrid, 0.5 + x / 600, 0.5 + z / 600) - 16384) / 512;
     height += (far - height) * weight;
   }
+  const surveyed = trailGrid && distance < 46
+    ? height * 0.68 + (sampleGrid(trailGrid, 0.5 + x / 96, 0.5 + z / 96) - 128) / 31
+    : undefined;
+  if (surveyed !== undefined && distance <= 32) return surveyed;
   for (const crater of craters) {
     const dx = x - crater.x;
     const dz = z - crater.z;
@@ -128,13 +138,13 @@ export function groundHeight(x: number, z: number) {
     const rimRadius = 1 + 0.085 * Math.sin(angle * 3 + crater.x) + 0.035 * Math.cos(angle * 7 - crater.z);
     const r = Math.hypot(dx, dz) / (crater.radius * rimRadius);
     const bowl = 1 - smoothRange(0.23, 0.98, r);
-    const crest = Math.exp(-(((r - 1) / (r < 1 ? 0.11 : 0.19)) ** 2));
+    const crest = (0.63 + 0.65 * geologyNoise(x * 0.81, z * 0.58)) * Math.exp(-(((r - 1) / (r < 1 ? 0.11 : 0.19)) ** 2));
     const breach = crater.breach === undefined ? 1 : 1 - 0.78 * Math.max(0, Math.cos(angle - crater.breach)) ** 16;
     const apron = 0.095 * (1 - smoothRange(1.02, 1.52, r)) * smoothRange(0.84, 1.02, r);
     const slumps = (geologyNoise(x * 1.26, z * 1.13) - 0.5) * crest * 0.14;
     height += crater.depth * ((0.29 + 0.095 * Math.sin(angle * 5 + crater.z)) * crest * breach + apron + slumps - bowl);
   }
-  return height;
+  return surveyed === undefined ? height : surveyed + smoothRange(32, 46, distance) * (height - surveyed);
 }
 
 const solids = [relay, ...boulders];
