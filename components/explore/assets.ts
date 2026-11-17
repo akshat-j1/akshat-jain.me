@@ -7,5 +7,6 @@ export const lunarAssets = {
   earthClouds: "/lunar/earth-clouds.webp",
   elevation: "/lunar/lunar-height.png",
   regionalElevation: "/lunar/copernicus-relief.png",
+  craterSurface: "/lunar/crater-surface.webp",
   basinElevation: "/lunar/basin-relief.png",
 } as const;

@@ -15,6 +15,7 @@ export default function Colophon() {
             <li>Gravelly Sand by <a href="https://polyhaven.com/a/gravelly_sand">Dario Barresi / Poly Haven</a> · CC0</li>
             <li>Earth surface and cloud maps by <a href="https://www.solarsystemscope.com/textures/">Solar System Scope</a> · CC BY 4.0</li>
             <li>Lunar elevation data by <a href="https://svs.gsfc.nasa.gov/4720/">NASA’s Lunar Reconnaissance Orbiter LOLA</a></li>
+            <li>Copernicus relief from <a href="https://pgda.gsfc.nasa.gov/products/54">SLDEM2015</a>, NASA/GSFC LOLA and JAXA SELENE Terrain Camera teams</li>
             <li>Opening artwork generated with OpenAI ImageGen</li>
             <li>Instrument Serif and Inter · SIL Open Font License</li>
           </ul>

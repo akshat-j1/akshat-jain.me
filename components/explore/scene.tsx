@@ -142,7 +142,7 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
   return (
     <>
       <color attach="background" args={["#040506"]} />
-      <hemisphereLight color="#e0e7fa" groundColor="#8b8e99" intensity={0.54} />
+      <hemisphereLight color="#e0e7fa" groundColor="#8b8e99" intensity={0.94} />
       <directionalLight
         position={sunlight}
         intensity={5.78}
@@ -157,7 +157,7 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
         shadow-bias={-0.00018}
         shadow-normalBias={0.014}
       />
-      <Terrain soil={assets.soil} normal={assets.normal} detail={assets.ejecta} quality={props.quality} />
+      <Terrain soil={assets.soil} normal={assets.normal} detail={assets.ejecta} craterSurface={assets.craterSurface} quality={props.quality} />
       <CelestialField albedo={assets.earth} clouds={assets.earthClouds} />
       <CommunicationsRelay active={close} onInspect={props.onInspect} />
       <FootfallDust walker={player} />

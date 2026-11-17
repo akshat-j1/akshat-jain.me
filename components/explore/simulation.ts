@@ -116,7 +116,7 @@ export function groundHeight(x: number, z: number) {
     + (geologyNoise(x * 0.32, z * 0.45) - 0.5) * 0.18);
   if (basinGrid && distance > 36) {
     // Blend outside the walking area; the ring walls never alter traversal or the relay pad.
-    const weight = smoothRange(36, 74, distance);
+    const weight = smoothRange(36, 55, distance);
     const far = (sampleGrid(basinGrid, 0.5 + x / 600, 0.5 + z / 600) - 16384) / 512;
     height += (far - height) * weight;
   }

@@ -38,8 +38,8 @@ export function createCameraRig() {
     const c = Math.cos(yaw);
     const s = Math.sin(yaw);
     const offsetX = portrait ? 0.30 : 2.36;
-    const offsetZ = portrait ? 6.65 : 7.75;
-    const eyeHeight = (portrait ? 2.63 : 2.75) + 2.2 * (zoom - 1);
+    const offsetZ = portrait ? 7.0 : 8.05;
+    const eyeHeight = (portrait ? 2.68 : 2.92) + 2.2 * (zoom - 1);
     eye.set(
       pivot.x + (offsetX * c + offsetZ * s) * zoom,
       ground + eyeHeight + pitch * 0.48,
@@ -58,7 +58,7 @@ export function createCameraRig() {
     const forward = (portrait ? 3.35 : 3.90) * (1 + 0.52 * (zoom - 1));
     const shoulder = portrait ? 0.13 : 0.35;
     const targetHeight = (portrait ? 0.95 : 1.39) + 1.85 * (zoom - 1)
-      - Math.tan(pitch) * (7.5 + 5.6 * (zoom - 1));
+      - Math.tan(pitch) * (5.9 + 5.2 * (zoom - 1));
     focus.set(pivot.x + shoulder * c - forward * s, ground + targetHeight, pivot.z - shoulder * s - forward * c);
     camera.lookAt(focus);
     initialized = true;

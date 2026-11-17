@@ -55,7 +55,7 @@ function contactOcclusion(x: number, z: number) {
 
 // Keep the previous grid at walking scale and spend the outer mesh on radial slopes.
 function terrainGeometry(quality: Quality) {
-  const rings = quality === "lite" ? 36 : quality === "high" ? 54 : 52;
+  const rings = quality === "lite" ? 46 : quality === "high" ? 86 : 68;
   const geometry = createTerrainGrid(qualityTiers[quality].subdivisions, rings);
   const positions = geometry.attributes.position;
   const uv = new Float32Array(positions.count * 2);
@@ -112,13 +112,16 @@ function rockGeometry(kind: RockClass) {
     const radius = 0.81 + 0.32 * distortion;
     const rockX = slab ? Math.min(x * radius + y * 0.12, 0.44 + y * 0.33 + z * 0.07) : x * radius - y * 0.15;
     const cap = slab ? 0.65 + z * 0.26 - x * 0.15 : 0.77 - x * 0.26 + z * 0.10;
-    p.setXYZ(i, rockX, Math.min(cap, y * radius), z * radius + 0.15 * y * x);
+    // Intersect oblique fracture planes to give the large blocks distinct faces.
+    const faceZ = isLarge ? Math.min(z * radius, 0.60 - x * 0.31 + y * 0.16) : z * radius;
+    const top = isLarge ? Math.min(cap, 0.66 + x * 0.57 + z * 0.24) : cap;
+    p.setXYZ(i, rockX, Math.min(top, y * radius), faceZ + 0.15 * y * x);
     const seam = Math.abs(y + z * 0.18 - x * 0.28);
     const tone = 0.82 + noise(Math.round(x * 9), Math.round(z * 7)) * 0.18 + (1 - smoothRange(0.02, 0.21, seam)) * 0.14;
     variation.set([tone, tone * 0.977, tone * 0.952], i * 3);
   }
   geometry.setAttribute("color", new BufferAttribute(variation, 3));
-  if (isLarge) toCreasedNormals(geometry, 0.76);
+  if (isLarge) toCreasedNormals(geometry, 0.43);
   else geometry.computeVertexNormals();
   return geometry;
 }
@@ -174,8 +177,8 @@ function Rocks({ count, kind, shadows, soil, normal }: {
       dummy.rotation.set((noise(seed, 49) - 0.5) * 0.28, turn, (noise(seed, 2) - 0.5) * 0.39);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-      const visibility = 0.28 + 0.72 * sunVisibility(x, z, y + size * 0.25);
-      const tint = (0.56 + noise(seed, 23) * 0.49) * visibility;
+      const visibility = 0.65 + 0.35 * sunVisibility(x, z, y + size * 0.25);
+      const tint = (0.66 + noise(seed, 23) * 0.42) * visibility;
       mesh.setColorAt(i, color.setRGB(tint, tint * 0.99, tint * 0.97));
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -190,12 +193,12 @@ function Rocks({ count, kind, shadows, soil, normal }: {
   );
 }
 
-export function Terrain({ soil, normal, detail, quality }: {
-  soil: Texture; normal: Texture; detail: Texture | null; quality: Quality;
+export function Terrain({ soil, normal, detail, craterSurface, quality }: {
+  soil: Texture; normal: Texture; detail: Texture | null; craterSurface: Texture | null; quality: Quality;
 }) {
   const geometry = useMemo(() => terrainGeometry(quality), [quality]);
   const detailed = quality !== "lite";
-  const material = useMemo(() => createRegolithMaterial(soil, normal, detailed ? detail : null), [soil, normal, detail, detailed]);
+  const material = useMemo(() => createRegolithMaterial(soil, normal, detailed ? detail : null, craterSurface), [soil, normal, detail, detailed, craterSurface]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 

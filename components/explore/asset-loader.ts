@@ -9,6 +9,7 @@ export type SurfaceAssets = {
   soil: Texture;
   normal: Texture;
   ejecta: Texture | null;
+  craterSurface: Texture | null;
   earth: Texture;
   earthClouds: Texture;
 };
@@ -60,6 +61,7 @@ export function disposeSurfaceAssets(assets: SurfaceAssets) {
   assets.soil.dispose();
   assets.normal.dispose();
   assets.ejecta?.dispose();
+  assets.craterSurface?.dispose();
   assets.earth.dispose();
   assets.earthClouds.dispose();
   clearElevationGrid();
@@ -68,7 +70,7 @@ export function disposeSurfaceAssets(assets: SurfaceAssets) {
 export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAssets> {
   const textures = new TextureLoader();
   const gltf = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const [astronaut, soil, normal, earth, earthClouds, elevation, regional, ejecta, basin] = await Promise.allSettled([
+  const [astronaut, soil, normal, earth, earthClouds, elevation, regional, ejecta, basin, craterSurface] = await Promise.allSettled([
     fetch(lunarAssets.astronaut, { signal }).then(async (response) => {
       if (!response.ok) throw new Error("Spacesuit unavailable");
       return gltf.parseAsync(await response.arrayBuffer(), "/lunar/");
@@ -81,13 +83,14 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     loadElevation(lunarAssets.regionalElevation, signal, "rg"),
     textures.loadAsync(lunarAssets.ejectaDetail),
     loadElevation(lunarAssets.basinElevation, signal, "rg-and-mask"),
+    textures.loadAsync(lunarAssets.craterSurface),
   ]);
 
   if (signal.aborted || astronaut.status !== "fulfilled" || soil.status !== "fulfilled" || normal.status !== "fulfilled"
     || earth.status !== "fulfilled" || earthClouds.status !== "fulfilled" || elevation.status !== "fulfilled"
     || regional.status !== "fulfilled") {
     if (astronaut.status === "fulfilled") disposeAstronaut(astronaut.value);
-    for (const texture of [soil, normal, earth, earthClouds, ejecta]) {
+    for (const texture of [soil, normal, earth, earthClouds, ejecta, craterSurface]) {
       if (texture.status === "fulfilled") texture.value.dispose();
     }
     throw new Error("Lunar assets unavailable");
@@ -96,6 +99,12 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
   installElevationGrid(elevation.value);
   installRegionalGrid(regional.value);
   if (basin.status === "fulfilled") installBasinGrid(basin.value);
+  const topography = craterSurface.status === "fulfilled" ? craterSurface.value : null;
+  if (topography) {
+    topography.flipY = false;
+    topography.anisotropy = 4;
+  }
+  if (basin.status !== "fulfilled") topography?.dispose();
   soil.value.colorSpace = earth.value.colorSpace = SRGBColorSpace;
   earthClouds.value.colorSpace = NoColorSpace;
   const detail = ejecta.status === "fulfilled" ? ejecta.value : null;
@@ -125,6 +134,7 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     soil: soil.value,
     normal: normal.value,
     ejecta: detail,
+    craterSurface: basin.status === "fulfilled" ? topography : null,
     earth: earth.value,
     earthClouds: earthClouds.value,
   };

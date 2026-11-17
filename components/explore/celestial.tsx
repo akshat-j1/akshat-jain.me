@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { BufferAttribute, BufferGeometry, Group, Mesh, Vector3, type PointsMaterial, type ShaderMaterial, type Texture } from "three";
 import { sunlight } from "./lighting";
 
-const earthDirection = new Vector3(0.006, 0.178, -1).normalize();
+const earthDirection = new Vector3(-0.017, 0.225, -1).normalize();
 const earthDistance = 500;
 const earthPosition = earthDirection.clone().multiplyScalar(earthDistance);
 // A modest increase over the 1.9° mean angular diameter for the composition.
@@ -26,7 +26,7 @@ function Starfield() {
   const view = useMemo(() => new Vector3(), []);
   const stars = useMemo(() => {
     const random = seededRandom(42117);
-    const count = 420;
+    const count = 760;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
@@ -47,7 +47,7 @@ function Starfield() {
     if (!material.current) return;
     const elevation = camera.getWorldDirection(view).y;
     const exposure = Math.max(0, Math.min(1, (elevation - 0.06) / 0.34));
-    material.current.opacity += (0.18 + 0.50 * exposure - material.current.opacity) * (1 - Math.exp(-4 * delta));
+    material.current.opacity += (0.37 + 0.37 * exposure - material.current.opacity) * (1 - Math.exp(-4 * delta));
   });
 
   return (
