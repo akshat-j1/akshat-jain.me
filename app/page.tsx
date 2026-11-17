@@ -1,54 +1,34 @@
-const githubUrl = "https://github.com/akshat-j1";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { SiteHeader } from "../components/site-header";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
-    <div className="mx-auto flex min-h-svh max-w-[100rem] flex-col px-6 sm:px-12 lg:px-20">
-      <header className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b border-rule py-6 sm:py-8">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="grid size-8 place-items-center rounded-[0.25rem] bg-accent font-serif text-xl leading-none text-white"
-          >
-            AJ
-          </span>
-          <span className="text-sm font-medium tracking-tight">akshat-jain.me</span>
-        </div>
-        <p className="flex items-center gap-2.5 text-[0.6875rem] font-semibold tracking-[0.16em] text-accent uppercase">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
-          Coming soon
-        </p>
-      </header>
-
-      <main className="grid grow place-items-center py-20 text-center sm:py-24">
-        <div className="hero-enter sm:-translate-y-3">
-          <h1 className="hero-title font-serif font-normal">
-            Akshat <em className="text-accent">Jain</em>
-          </h1>
-          <p className="mx-auto mt-6 max-w-[28rem] text-base leading-relaxed text-balance text-muted sm:mt-8 sm:text-lg">
-            Computer science student, developer and builder.
-          </p>
-        </div>
-      </main>
-
-      <footer className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1 border-t border-rule py-4 sm:py-6">
-        <p className="text-sm leading-relaxed text-muted sm:text-base">
-          Something exciting is in the works
-        </p>
-        <a
-          href={githubUrl}
-          className="group inline-flex min-h-11 items-center gap-2.5 text-sm font-semibold text-accent focus-visible:outline-2 focus-visible:outline-offset-4"
-        >
-          <span className="underline decoration-accent/35 underline-offset-4 group-hover:decoration-current motion-safe:transition-colors">
-            GitHub
-          </span>
-          <span
-            aria-hidden="true"
-            className="text-base leading-none motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5"
-          >
-            ↗
-          </span>
-        </a>
-      </footer>
+    <div className="field field-landing">
+      <picture className="opening-plate">
+        <source media="(max-width: 640px)" srcSet="/lunar/opening-portrait.webp" />
+        <img src="/lunar/opening.webp" alt="" width={1536} height={1024} fetchPriority="high" />
+      </picture>
+      <div className="opening-shade" aria-hidden="true" />
+      <div className="field-frame opening-frame">
+        <SiteHeader mode="landing" />
+        <main className="opening-copy">
+          <h1>Akshat <em>Jain</em></h1>
+          <p>Computer science student, developer and builder.</p>
+          <div className="field-actions">
+            <Link className="field-button field-primary" href="/explore" prefetch={false}>Begin Exploration <span aria-hidden="true">↗</span></Link>
+            <Link className="field-button field-secondary" href="/work">View Portfolio <span aria-hidden="true">→</span></Link>
+          </div>
+        </main>
+        <footer className="opening-caption">
+          <span>Akshat Jain · Personal website</span>
+          <span>Artist’s impression of the lunar surface</span>
+        </footer>
+      </div>
     </div>
   );
 }
