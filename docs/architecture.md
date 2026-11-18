@@ -1,6 +1,6 @@
 # Architecture
 
-The original V0 page is available at /coming-soon on this branch. The new landing and portfolio are App Router server components with ordinary links. /explore has server-rendered navigation and a browser-only shell. The shell checks capability and preference before dynamically importing React Three Fiber, Three.js, the GLB loader or any scene asset.
+The original V0 page is served at `/` and `/coming-soon`. Its Coming soon link opens the cinematic landing at `/experience`. Both landing pages and the portfolio are App Router server components with ordinary links. `/explore` has server-rendered navigation and a browser-only shell. The shell checks capability and preference before dynamically importing React Three Fiber, Three.js, the GLB loader or any scene asset.
 
 Simulation uses metre-like units, Y up and negative Z forward. A deterministic height function drives ground geometry and capsule grounding. A fixed collision layout defines the relay footprint, boulders and walkable bounds. Input supplies a normalized direction to the simulation. The player rig and camera read the same result. The shell sees only changes in nearby station, readiness and rendering quality. The server builds the portfolio and each destination’s discovery bindings from content/projects.ts. World-owned locations live in content/worlds.ts. Only short summaries assigned to the Moon cross the exploration client boundary. See the [portfolio editing guide](phase-3-proposal.md#editing-the-milestone-1-implementation).
 

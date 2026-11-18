@@ -20,16 +20,41 @@ async function ready(page: Page) {
   await expect(page.getByRole("button", { name: "Open wider observation view" })).toBeVisible({ timeout: 20_000 });
 }
 
-test("landing and direct portfolio render at all eight sizes with zero scene asset requests", async ({ page }) => {
+test("both landing pages and direct portfolio render at all eight sizes without loading the scene", async ({ page }) => {
   const sceneRequests: string[] = [];
+  const homepageRequests: string[] = [];
+  let checkingHome = false;
   page.on("request", (request) => {
-    if (/\/lunar\/(?:astronaut|earth-|ejecta-detail|lunar-height|copernicus-relief|basin-relief|crater-surface|regolith|bright-stars|fault-rock|rim-strata|galactic-light|moon_rock|trail-impacts)/.test(request.url())) sceneRequests.push(request.url());
+    const { pathname } = new URL(request.url());
+    if (checkingHome && /^\/(?:lunar\/|experience(?:\/|$)|explore(?:\/|$))/.test(pathname)) {
+      homepageRequests.push(pathname);
+    }
+    if (pathname.startsWith("/lunar/") && !/^\/lunar\/opening(?:-portrait)?\.webp$/.test(pathname)) {
+      sceneRequests.push(pathname);
+    }
   });
 
   for (const [width, height] of sizes) {
     await page.setViewportSize({ width, height });
+    checkingHome = true;
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Akshat Jain" })).toBeVisible();
+    await expect(page.getByText("Computer science student, developer and builder.")).toBeVisible();
+    await expect(page.getByText("Something exciting is in the works")).toBeVisible();
+    await expect(page.locator("body")).toHaveCSS("background-color", "rgb(248, 246, 240)");
+    await expect(page.getByRole("heading", { name: "Akshat Jain" }).locator("em")).toHaveCSS("color", "rgb(38, 61, 178)");
+    await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute("href", "https://github.com/akshat-j1");
+    const comingSoon = page.getByRole("link", { name: "Coming soon" });
+    await expect(comingSoon).toBeInViewport();
+    await expect(comingSoon).toHaveAttribute("href", "/experience");
+    await expect(page.locator("canvas")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    checkingHome = false;
+
+    await comingSoon.click();
+    await expect(page).toHaveURL("/experience");
+    await expect(page.locator(".opening-plate img")).toBeVisible();
+    await expect.poll(() => page.locator(".opening-plate img").evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await expect(page.getByRole("link", { name: "Begin Exploration" })).toBeInViewport();
     await page.getByRole("link", { name: "View Portfolio" }).click();
     await expect(page.getByRole("heading", { name: "Portfolio" })).toBeVisible();
@@ -41,14 +66,35 @@ test("landing and direct portfolio render at all eight sizes with zero scene ass
     await page.locator(`a[href="${projectHref(first)}"]`).click();
     await expect(page.getByRole("heading", { name: first.name, exact: true })).toBeVisible();
   }
+  expect(homepageRequests).toEqual([]);
   expect(sceneRequests).toEqual([]);
+});
+
+test("keyboard activation opens the cinematic landing and browser history restores both homepages", async ({ page }) => {
+  await page.goto("/");
+  const comingSoon = page.getByRole("link", { name: "Coming soon" });
+  await page.keyboard.press("Tab");
+  await expect(comingSoon).toBeFocused();
+  await expect(comingSoon).toHaveCSS("outline-style", "solid");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL("/experience");
+  await expect(page.getByRole("link", { name: "Begin Exploration" })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL("/");
+  await expect(comingSoon).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL("/experience");
+  await expect(page.getByRole("link", { name: "View Portfolio" })).toBeVisible();
+
+  await page.goto("/coming-soon");
+  await expect(comingSoon).toHaveAttribute("href", "/experience");
 });
 
 test("keyboard traversal, dialog pause and focus return, quality, and repeated entry", async ({ page }) => {
   test.skip(!relayEntry, "This case exercises a published relay assignment.");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await page.goto("/experience");
   await page.getByRole("link", { name: "Begin Exploration" }).click();
   await ready(page);
   await expect(page.getByRole("button", { name: "Inspect relay" })).toHaveCount(0);
@@ -80,7 +126,7 @@ test("keyboard traversal, dialog pause and focus return, quality, and repeated e
   await ready(page);
   await expect(inspect).toHaveCount(0);
   await page.getByRole("link", { name: "Exit" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/experience");
   expect(errors).toEqual([]);
 });
 

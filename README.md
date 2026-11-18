@@ -1,6 +1,6 @@
 # akshat-jain.me
 
-Lunar Field Log is an interactive portfolio prototype for Akshat Jain. The Phase 1 vertical slice includes the opening, one playable lunar traversal and the MEETFLIX relay. The approved V0 page is also available at `/coming-soon` on this branch.
+The approved coming-soon page lives at `/`. Its Coming soon link opens Lunar Field Log at `/experience`. The interactive world is at `/explore`, and the portfolio is directly available at `/work`.
 
 ## Local development
 

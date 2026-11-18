@@ -26,14 +26,13 @@ const description =
   "Akshat Jain is a computer science student, developer and builder. Explore his work through Lunar Field Log or browse the portfolio directly.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://akshat-jain.me"),
+  metadataBase: new URL("https://www.akshat-jain.me"),
   title,
   description,
   authors: [{ name: "Akshat Jain" }],
   openGraph: {
     title,
     description,
-    url: "/",
     siteName: "Lunar Field Log",
     type: "website",
   },
