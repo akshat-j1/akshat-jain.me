@@ -1,3 +1,4 @@
+import { ferryObstacles, ferrySite, rimBlocks } from "../../content/ferry-site";
 import { moon, relay } from "../../content/worlds";
 export { relay };
 export const spawn = moon.arrival;
@@ -115,7 +116,7 @@ function elevationHeight(x: number, z: number, distance: number) {
   return local * (1 - blend) + (regional * (0.87 + 0.4 * massif) + relief) * blend;
 }
 
-export function groundHeight(x: number, z: number) {
+function basinHeight(x: number, z: number) {
   const distance = Math.hypot(x, z);
   const localDetail = 1 - smoothRange(27, 64, distance);
   let height = elevationHeight(x, z, distance) + localDetail * (
@@ -148,11 +149,28 @@ export function groundHeight(x: number, z: number) {
   return surveyed === undefined ? height : surveyed + smoothRange(32, 46, distance) * (height - surveyed);
 }
 
-const solids = [relay, ...boulders];
+export function groundHeight(x: number, z: number) {
+  let original = basinHeight(x, z);
+  if (x > 14 && x < 35 && z > -23 && z < 2) {
+    const apron = 1 - smoothRange(0.24, 1, Math.hypot((x-ferrySite.x)/11, (z-ferrySite.z)/13));
+    original += 1.75 * apron;
+  }
+  if (x <= 4 || x >= 20 || z <= -17 || z >= 5) return original;
+  // An oblique rim with two exposed shoulders and a lower saddle between them.
+  const ridgeX = 12 + (z + 5) * 0.32;
+  const flank = 1 - smoothRange(0.45, 5.2, Math.abs(x - ridgeX));
+  const ends = smoothRange(-17, -11, z) * (1 - smoothRange(0, 5, z));
+  const notch = smoothRange(0.1, 2.7, Math.abs(z + 8.75));
+  return original + flank * ends * (0.55 + notch * (0.8 + 0.6 * geologyNoise(x * 0.76, z * 0.55)));
+}
+
+const solids = [relay, ...boulders, ...rimBlocks, ...ferryObstacles];
 const playerRadius = 0.32;
 
 function canOccupy(x: number, z: number) {
-  return Math.abs(x) <= 15 && z >= -25 && z <= 12
+  const inBasin = Math.abs(x) <= 15 && z >= -25 && z <= 12;
+  const onEasternShelf = x >= 14 && x <= 30 && z >= -18 && z <= 2;
+  return (inBasin || onEasternShelf)
     && solids.every((solid) => (x - solid.x) ** 2 + (z - solid.z) ** 2 >= (solid.radius + playerRadius) ** 2);
 }
 

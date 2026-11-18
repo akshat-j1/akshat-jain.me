@@ -7,6 +7,7 @@ import { clearElevationGrid, installBasinGrid, installElevationGrid, installRegi
 export type SurfaceAssets = {
   astronaut: GLTF;
   rocks: (GLTF | null)[];
+  strata: Texture | null;
   faultRock: Texture | null;
   galaxy: Texture | null;
   brightStars: ArrayBuffer | null;
@@ -65,6 +66,7 @@ export function disposeSurfaceAssets(assets: SurfaceAssets) {
   for (const rock of assets.rocks) if (rock) disposeModel(rock);
   assets.galaxy?.dispose();
   assets.faultRock?.dispose();
+  assets.strata?.dispose();
   assets.soil.dispose();
   assets.normal.dispose();
   assets.ejecta?.dispose();
@@ -82,7 +84,7 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     if (!response.ok) throw new Error("Model unavailable");
     return gltf.parseAsync(await response.arrayBuffer(), "/lunar/");
   };
-  const [astronaut, soil, normal, earth, earthClouds, elevation, regional, ejecta, basin, craterSurface, galaxy, scan02, scan05, starCatalog, faultRock, trail] = await Promise.allSettled([
+  const [astronaut, soil, normal, earth, earthClouds, elevation, regional, ejecta, basin, craterSurface, galaxy, scan02, scan05, starCatalog, faultRock, trail, strata] = await Promise.allSettled([
     loadModel(lunarAssets.astronaut),
     textures.loadAsync(lunarAssets.soil),
     textures.loadAsync(lunarAssets.soilNormal),
@@ -102,13 +104,14 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
     }),
     textures.loadAsync(lunarAssets.faultRock),
     loadElevation(lunarAssets.trail, signal),
+    textures.loadAsync(lunarAssets.strata),
   ]);
 
   if (signal.aborted || astronaut.status !== "fulfilled" || soil.status !== "fulfilled" || normal.status !== "fulfilled"
     || earth.status !== "fulfilled" || earthClouds.status !== "fulfilled" || elevation.status !== "fulfilled"
     || regional.status !== "fulfilled") {
     for (const model of [astronaut, scan02, scan05]) if (model.status === "fulfilled") disposeModel(model.value);
-    for (const texture of [soil, normal, earth, earthClouds, ejecta, craterSurface, galaxy, faultRock]) {
+    for (const texture of [soil, normal, earth, earthClouds, ejecta, craterSurface, galaxy, faultRock, strata]) {
       if (texture.status === "fulfilled") texture.value.dispose();
     }
     throw new Error("Lunar assets unavailable");
@@ -128,7 +131,9 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
   earthClouds.value.colorSpace = NoColorSpace;
   const detail = ejecta.status === "fulfilled" ? ejecta.value : null;
   const bedrock = faultRock.status === "fulfilled" ? faultRock.value : null;
-  for (const texture of [soil.value, normal.value, detail, bedrock]) {
+  const ledge = strata.status === "fulfilled" ? strata.value : null;
+  if (ledge) ledge.colorSpace = SRGBColorSpace;
+  for (const texture of [soil.value, normal.value, detail, bedrock, ledge]) {
     if (!texture) continue;
     texture.wrapS = texture.wrapT = RepeatWrapping;
     texture.anisotropy = 4;
@@ -137,6 +142,7 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
   astronaut.value.scene.traverse((node) => {
     if (node instanceof Mesh) {
       node.castShadow = true;
+      node.receiveShadow = true;
       node.frustumCulled = false;
       if (node.material instanceof MeshStandardMaterial) {
         node.material.roughness = 0.94;
@@ -152,6 +158,7 @@ export async function loadSurfaceAssets(signal: AbortSignal): Promise<SurfaceAss
   return {
     astronaut: astronaut.value,
     faultRock: bedrock,
+    strata: ledge,
     brightStars: starCatalog.status === "fulfilled" ? starCatalog.value : null,
     galaxy: galaxy.status === "fulfilled" ? galaxy.value : null,
     rocks: [scan02, scan05].map((result) => result.status === "fulfilled" ? result.value : null),

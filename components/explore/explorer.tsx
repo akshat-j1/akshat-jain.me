@@ -255,7 +255,7 @@ export function Explorer({ destinationName, points }: { destinationName: string;
       {status === "ready" && (
         <div className="surface-interface">
           <div className="surface-guide">
-            <h1>{nearby?.name ?? points[0]?.name ?? destinationName}</h1>
+            <h1>{nearby?.name ?? destinationName}</h1>
             {points.length > 0 && <p role="status">{nearby ? "Within reach" : "Approach a site to inspect its project."}</p>}
             <span className="touch-instruction">Hold a direction to walk · drag to look</span>
           </div>

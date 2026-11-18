@@ -1,6 +1,6 @@
 # Phase 3 proposal · An expandable space portfolio
 
-**Status:** Architecture approved. Milestone 1 is implemented locally for review. Milestone 2 awaits separate approval. The proposed first journey connects the lunar surface to an orbital observatory. Either place can stand on its own with zero featured projects.
+Milestone 1 is in the feature branch. The first playable eastern ferry approach is ready for visual review. The proposed flight and orbital observatory are later stages. [Ferry blockout and browser evidence](ferry-blockout.md)
 
 ## Starting point at the foundation checkpoint
 

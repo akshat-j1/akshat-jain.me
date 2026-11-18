@@ -16,6 +16,13 @@ export type Destination = {
   installations: readonly DiscoveryPoint[];
 };
 
+import { sitePoint } from "./ferry-site";
+
+export const ferryHatch = {
+  ...sitePoint(-3.85, -.10), id: "ferry", name: "Survey ferry", label: "Eastern shelf",
+  action: "Inspect ferry entry", reach: 2.6,
+};
+
 export const relay = {
   id: "relay", name: "Communications relay", label: "Station 01", action: "Inspect relay",
   x: 1.7, z: -10, reach: 4.65, radius: 2.05,
@@ -24,7 +31,7 @@ export const relay = {
 export const moon = {
   id: "moon", name: "Lunar surface", href: "/explore",
   arrival: { id: "landing", name: "Landing site", label: "Moon", action: "Inspect landing site", x: 0, z: 2.5, reach: 2.5 },
-  installations: [relay],
+  installations: [relay, ferryHatch],
 } satisfies Destination;
 
 export const destinations: readonly Destination[] = [moon];

@@ -14,9 +14,11 @@ import { sunlight } from "./lighting";
 import { lowerQuality, qualityTiers, type Quality } from "./quality";
 import { CommunicationsRelay } from "./relay";
 import { createWalker, groundHeight, relay, spawn, stepWalker } from "./simulation";
+import { RimOutcrop } from "./rim-outcrop";
+import { SurveyFerry } from "./survey-ferry";
 import { Terrain } from "./terrain";
 
-import { nearestDiscovery, type Discovery } from "../../content/worlds";
+import { ferryHatch, nearestDiscovery, type Discovery } from "../../content/worlds";
 
 export type SceneProps = {
   input: ExploreInput;
@@ -164,6 +166,8 @@ function Traverse({ assets, props, lookRef }: { assets: SurfaceAssets; props: Sc
       <Terrain faultRock={assets.faultRock} rocks={assets.rocks} soil={assets.soil} normal={assets.normal} detail={assets.ejecta} craterSurface={assets.craterSurface} quality={props.quality} />
       <CelestialField brightStars={assets.brightStars} galaxy={assets.galaxy} albedo={assets.earth} clouds={assets.earthClouds} />
       <CommunicationsRelay active={activeId === relay.id} onInspect={() => props.onInspect(relay.id)} />
+      <RimOutcrop strata={assets.strata} soil={assets.soil} normal={assets.normal} />
+      <SurveyFerry onInspect={activeId === ferryHatch.id ? () => props.onInspect(ferryHatch.id) : undefined} />
       <Bootprints walker={player} />
       <FootfallDust walker={player} />
       <group ref={model} position={[spawn.x, 0, spawn.z]} rotation={[0, Math.PI, 0]}>

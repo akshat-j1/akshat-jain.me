@@ -8,7 +8,7 @@ import type { Quality } from "./quality";
 // strike as their parent ledge, with smaller blocks spreading onto its apron.
 const ledges = [
   [-27, -40, 0.67, 3.1], [29, -43, -0.72, 4.2], [-47, -13, 1.15, 4.8],
-  [35, -4, -0.33, 2.8], [-36, 22, -0.96, 3.5], [15, 34, 0.29, 3.4],
+  [44, -1, -0.33, 2.8], [-36, 22, -0.96, 3.5], [15, 34, 0.29, 3.4],
   [-6, -46, 0.28, 2.7], [45, 20, 0.90, 3.1], [-14, 39, -0.58, 2.1],
 ] as const;
 

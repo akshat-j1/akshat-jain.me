@@ -107,3 +107,16 @@ test("the outer basin blends in beyond the complete walking bounds", () => {
     clearElevationGrid();
   }
 });
+
+test("the eastern berth opens from the basin and the hull blocks walking", () => {
+  const walker = createWalker();
+  walker.x = 14;
+  walker.z = -10.5;
+  walk(walker, 1, 0, 8);
+  expect(walker.x).toBeGreaterThan(19);
+  expect(walker.x).toBeLessThan(22);
+  walker.x = 16;
+  walker.z = -18;
+  walk(walker, 0, -1, 2);
+  expect(walker.z).toBeGreaterThanOrEqual(-18);
+});

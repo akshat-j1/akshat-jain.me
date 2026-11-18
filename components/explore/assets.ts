@@ -11,6 +11,7 @@ export const lunarAssets = {
   starCatalog: "/lunar/bright-stars.bin",
   faultRock: "/lunar/fault-rock.webp",
   galaxy: "/lunar/galactic-light.webp",
+  strata: "/lunar/rim-strata.webp",
   rock02: "/lunar/moon_rock_02.glb",
   rock05: "/lunar/moon_rock_05.glb",
   craterSurface: "/lunar/crater-surface.webp",

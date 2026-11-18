@@ -4,7 +4,10 @@ import { boulders, groundHeight, relay, type Walker } from "./simulation";
 
 export type CameraLook = { yaw: number; pitch: number; observing: boolean };
 
+import { ferryObstacles, rimBlocks } from "../../content/ferry-site";
+
 const obstacles = [
+  ...ferryObstacles, ...rimBlocks,
   { ...relay, radius: 1.58, height: 2.62 },
   ...boulders.map((rock) => ({ ...rock, height: rock.radius * 0.82 })),
 ];

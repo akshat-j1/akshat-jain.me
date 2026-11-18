@@ -3,6 +3,7 @@ import { BufferAttribute, Color, IcosahedronGeometry, InstancedMesh, Object3D, V
 import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
 import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { SurveyRocks } from "./survey-rocks";
+import { ferrySite } from "../../content/ferry-site";
 import { sunlight } from "./lighting";
 import { createRegolithMaterial } from "./regolith-material";
 import { basinRockExposure, boulders, craters, geologyNoise, groundHeight, relay, smoothRange } from "./simulation";
@@ -52,7 +53,8 @@ function contactOcclusion(x: number, z: number) {
     contact = Math.max(contact, (1 - smoothRange(0.54, 1.32, range)) * 0.64);
   }
   const pad = Math.hypot((x - relay.x) * 0.73, (z - relay.z) * 1.18);
-  return 1 - Math.max(contact, (1 - smoothRange(0.3, 1.93, pad)) * 0.42);
+  const underFerry = Math.hypot((x - ferrySite.x) / 3, (z - ferrySite.z) / 4.8);
+  return 1 - Math.max(contact, (1 - smoothRange(0.38, 1.08, underFerry)) * 0.61, (1 - smoothRange(0.3, 1.93, pad)) * 0.42);
 }
 
 // Keep the previous grid at walking scale and spend the outer mesh on radial slopes.
