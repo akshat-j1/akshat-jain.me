@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "./field.css";
 
 const instrumentSerif = localFont({
   src: [
@@ -22,19 +23,17 @@ const inter = localFont({
 
 const title = "Akshat Jain — Computer Science Student, Developer & Builder";
 const description =
-  "Akshat Jain is a computer science student, developer and builder. His personal website is coming soon.";
+  "Akshat Jain is a computer science student, developer and builder. Explore his work through Lunar Field Log or browse the portfolio directly.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://akshat-jain.me"),
+  metadataBase: new URL("https://www.akshat-jain.me"),
   title,
   description,
   authors: [{ name: "Akshat Jain" }],
-  alternates: { canonical: "/" },
   openGraph: {
     title,
     description,
-    url: "/",
-    siteName: "Akshat Jain",
+    siteName: "Lunar Field Log",
     type: "website",
   },
   twitter: { card: "summary", title, description },

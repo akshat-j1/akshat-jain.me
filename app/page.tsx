@@ -1,4 +1,19 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
 const githubUrl = "https://github.com/akshat-j1";
+
+const title = "Akshat Jain — Computer Science Student, Developer & Builder";
+const description =
+  "Akshat Jain is a computer science student, developer and builder. His personal website is coming soon.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: { canonical: "/" },
+  openGraph: { title, description, url: "/", siteName: "Akshat Jain", type: "website" },
+  twitter: { card: "summary", title, description },
+};
 
 export default function Home() {
   return (
@@ -13,10 +28,14 @@ export default function Home() {
           </span>
           <span className="text-sm font-medium tracking-tight">akshat-jain.me</span>
         </div>
-        <p className="flex items-center gap-2.5 text-[0.6875rem] font-semibold tracking-[0.16em] text-accent uppercase">
+        <Link
+          href="/experience"
+          prefetch={false}
+          className="flex min-h-6 cursor-pointer items-center gap-2.5 text-[0.6875rem] font-semibold tracking-[0.16em] text-accent uppercase underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+        >
           <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
           Coming soon
-        </p>
+        </Link>
       </header>
 
       <main className="grid grow place-items-center py-20 text-center sm:py-24">
