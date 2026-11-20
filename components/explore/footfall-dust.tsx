@@ -18,7 +18,7 @@ export function FootfallDust({ walker }: { walker: { current: Walker } }) {
   useFrame((_, elapsed) => {
     const player = walker.current;
     const delta = Math.min(elapsed, 0.1);
-    if (player.speed > 0.85) {
+    if (player.grounded && player.speed > 0.85) {
       clock.current += delta * player.speed;
       while (clock.current >= 0.78) {
         clock.current -= 0.78;

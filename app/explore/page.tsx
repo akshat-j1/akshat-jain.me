@@ -4,7 +4,7 @@ import { SiteHeader } from "../../components/site-header";
 import { Explorer } from "../../components/explore/explorer";
 
 import { catalog } from "../../content/projects";
-import { moon } from "../../content/worlds";
+import { moon, withScenicEntries } from "../../content/worlds";
 
 export const metadata: Metadata = { title: "Explore · Lunar Field Log" };
 
@@ -13,7 +13,7 @@ export default function Explore() {
     <div className="field field-explore">
       <div className="explore-header"><SiteHeader mode="explore" /></div>
       <main className="explore-main">
-        <Explorer destinationName={moon.name} points={catalog.bindings.get(moon.id) ?? []} />
+        <Explorer destinationName={moon.name} points={withScenicEntries(catalog.bindings.get(moon.id) ?? [])} />
         <noscript>
           <style>{".explorer-shell { visibility: hidden; }"}</style>
           <section className="scene-fallback">

@@ -42,3 +42,12 @@ gltf-transform optimize astronaut-source.glb public/lunar/astronaut.glb \
   --compress meshopt --simplify-ratio 0.17 --simplify-error 0.003 \
   --texture-size 1024 --texture-compress webp --instance false --palette false
 ```
+
+
+## Cinematic exploration upgrade
+
+The Orrery, Archive, route lamps, distant courier, ringed world, terrain refinements, map and associated shader artwork are authored in this repository. They use the existing Three.js primitives and locally loaded surface assets. The scenic text is explicitly marked as an interactive world demo. MEETFLIX retains its verified name and preparation status.
+
+The local survey-opening.webp and survey-opening-portrait.webp are browser captures of the implemented world. Their underlying spacesuit, rock, terrain, sky and Earth assets retain the licenses listed above. The original generated opening images remain available in the source history and assets. No research artwork was imported into the scene.
+
+Vercel React Best Practices is MIT-licensed guidance. Anthropic Frontend Design was reviewed from its official repository as process guidance. Neither adds a runtime dependency.

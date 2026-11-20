@@ -23,7 +23,10 @@ export function cameraRelativeAxes(horizontal: number, vertical: number, forward
 
 export function createInput() {
   const held = new Map<string, Direction>();
+  let jump = false;
   return {
+    jump() { jump = true; },
+    consumeJump() { const queued = jump; jump = false; return queued; },
     set(id: string, direction: Direction) {
       held.set(id, direction);
     },
@@ -35,6 +38,7 @@ export function createInput() {
     },
     clear() {
       held.clear();
+      jump = false;
     },
     get moving() {
       return held.size > 0;

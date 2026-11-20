@@ -37,27 +37,39 @@ export function createAstronautMotion({ scene, animations }: GLTF) {
     bone.quaternion.copy(start.slerp(midpoint, 0.5));
   }
 
+  const floatTracks: QuaternionKeyframeTrack[] = [];
+  for (const [name, angle] of [["LeftUpLeg", -.20], ["RightUpLeg", -.13], ["LeftLeg", .35], ["RightLeg", .28]] as const) {
+    const bone = scene.getObjectByName(name);
+    if (!(bone instanceof Bone)) continue;
+    const pose = bone.quaternion.clone().multiply(new Quaternion().setFromAxisAngle(new Vector3(1,0,0), angle));
+    floatTracks.push(new QuaternionKeyframeTrack(name + ".quaternion", [0, 1], [...pose.toArray(), ...pose.toArray()]));
+  }
   scene.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(scene, true);
   const groundOffset = -bounds.min.y;
   const mixer = new AnimationMixer(scene);
   const stride = mixer.clipAction(walk).play();
   const idle = mixer.clipAction(new AnimationClip("Breathing", 2.7, idleTracks)).play();
+  const floating = mixer.clipAction(new AnimationClip("Low gravity", 1, floatTracks)).play();
+  let floatWeight = 0;
   const toePosition = new Vector3();
   let weight = 0;
   let lift = 0;
 
   return {
     groundOffset,
-    update(speed: number, delta: number, groundAt: (x: number, z: number) => number) {
-      const target = Math.min(1, speed / 1.6);
+    update(speed: number, delta: number, groundAt: (x: number, z: number) => number, airborne = false) {
+      const target = airborne ? .17 : Math.min(1, speed / 1.6);
       weight += (target - weight) * (1 - Math.exp(-12 * delta));
       if (target === 0 && weight < 0.012) weight = 0;
-      stride.weight = weight;
-      stride.timeScale = Math.max(0.55, speed / 2.1);
-      idle.weight = 1 - weight;
+      floatWeight += ((airborne ? .8 : 0) - floatWeight) * (1 - Math.exp(-10 * delta));
+      floating.weight = floatWeight;
+      stride.weight = weight * (1 - floatWeight);
+      stride.timeScale = airborne ? .2 : Math.max(0.55, speed / 2.1);
+      idle.weight = (1 - weight) * (1 - floatWeight);
       mixer.update(delta);
-      if (toes.length && scene.parent) {
+      if (airborne) lift = 0;
+      if (!airborne && toes.length && scene.parent) {
         scene.parent.position.y += lift;
         scene.updateWorldMatrix(true, true);
         let lowestClearance = Number.POSITIVE_INFINITY;

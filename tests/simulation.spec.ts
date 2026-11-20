@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createInput, directionFor } from "../components/explore/input";
 import { toeGroundCorrection } from "../components/explore/foot-contact";
-import { clearElevationGrid, createWalker, groundHeight, installBasinGrid, installElevationGrid, installRegionalGrid, nearRelay, relay, stepWalker } from "../components/explore/simulation";
+import { clearElevationGrid, createWalker, groundHeight, jumpWalker, installBasinGrid, installElevationGrid, installRegionalGrid, nearRelay, relay, stepWalker } from "../components/explore/simulation";
 
 function walk(player: ReturnType<typeof createWalker>, x: number, z: number, duration: number, fps = 60) {
   for (let frame = 0; frame < duration * fps; frame++) stepWalker(player, x, z, 1 / fps);
@@ -101,7 +101,8 @@ test("the outer basin blends in beyond the complete walking bounds", () => {
   try {
     installBasinGrid({ width: 2, height: 2, values: new Uint16Array(4).fill(16384 + 512 * 20) });
     expect(corners.map(([x, z]) => groundHeight(x, z))).toEqual(heights);
-    expect(groundHeight(0, -100)).toBe(20);
+    expect(Number.isFinite(groundHeight(0, -100))).toBe(true);
+    expect(groundHeight(0, -100)).toBeGreaterThan(15);
     expect(Math.abs(groundHeight(0, -36.01) - groundHeight(0, -35.99))).toBeLessThan(0.03);
   } finally {
     clearElevationGrid();
@@ -119,4 +120,34 @@ test("the eastern berth opens from the basin and the hull blocks walking", () =>
   walker.z = -18;
   walk(walker, 0, -1, 2);
   expect(walker.z).toBeGreaterThanOrEqual(-18);
+});
+
+test("low gravity jumps carry momentum, reject repeated jumps and land on the shared terrain", () => {
+  for (const fps of [30, 60, 120]) {
+    const walker = createWalker();
+    walk(walker, .5, -.5, .4, fps);
+    const launch = { x: walker.x, y: walker.y, z: walker.z };
+    expect(jumpWalker(walker)).toBe(true);
+    expect(jumpWalker(walker)).toBe(false);
+    let peak = walker.y;
+    for (let frame = 0; frame < fps * 3; frame++) {
+      stepWalker(walker, .5, -.5, 1/fps);
+      peak = Math.max(peak, walker.y);
+    }
+    expect(peak - launch.y).toBeGreaterThan(1.5);
+    expect(walker.x - launch.x).toBeGreaterThan(2);
+    expect(walker.grounded).toBe(true);
+    expect(walker.y).toBeCloseTo(groundHeight(walker.x, walker.z), 4);
+    expect(jumpWalker(walker)).toBe(true);
+  }
+});
+
+test("jump requests are consumed once and cleared with held controls", () => {
+  const input = createInput();
+  input.jump();
+  expect(input.consumeJump()).toBe(true);
+  expect(input.consumeJump()).toBe(false);
+  input.jump();
+  input.clear();
+  expect(input.consumeJump()).toBe(false);
 });

@@ -12,8 +12,8 @@ export default function Experience() {
   return (
     <div className="field field-landing">
       <picture className="opening-plate">
-        <source media="(max-width: 640px)" srcSet="/lunar/opening-portrait.webp" />
-        <img src="/lunar/opening.webp" alt="" width={1536} height={1024} fetchPriority="high" />
+        <source media="(max-width: 640px)" srcSet="/lunar/survey-opening-portrait.webp" />
+        <img src="/lunar/survey-opening.webp" alt="" width={1536} height={891} fetchPriority="high" />
       </picture>
       <div className="opening-shade" aria-hidden="true" />
       <div className="field-frame opening-frame">
@@ -28,7 +28,7 @@ export default function Experience() {
         </main>
         <footer className="opening-caption">
           <span>Akshat Jain · Personal website</span>
-          <span>Artist’s impression of the lunar surface</span>
+          <span>Captured in the playable world</span>
         </footer>
       </div>
     </div>

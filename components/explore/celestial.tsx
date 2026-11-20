@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { BackSide, BufferAttribute, BufferGeometry, Group, Mesh, Vector3, type ShaderMaterial, type Texture } from "three";
+import { BackSide, BufferAttribute, BufferGeometry, DoubleSide, Group, Mesh, Vector3, type ShaderMaterial, type Texture } from "three";
 import { sunlight } from "./lighting";
 
-const earthDirection = new Vector3(0.068, 0.172, -1).normalize();
+const earthDirection = new Vector3(0.08, 0.18, -1).normalize();
 const earthDistance = 500;
 const earthPosition = earthDirection.clone().multiplyScalar(earthDistance);
 // Art-directed angular size keeps the illuminated hemisphere legible from the trail.
-const earthRadius = Math.tan(Math.PI / 180 * 1.76) * earthDistance;
+const earthRadius = Math.tan(Math.PI / 180 * 2.8) * earthDistance;
 const solarDayRate = Math.PI * 2 / (24 * 60 * 60);
 const sunDirection = new Vector3(...sunlight).normalize();
 
@@ -127,7 +127,11 @@ const skyFragment = `
     float disk = 1.0 - smoothstep(0.004, 0.006, angle);
     float glare = 0.13 * exp(-angle * 33.0) + 0.29 * exp(-angle * 153.0);
     // Display-referred exposure of the catalog, separate from terrestrial PBR.
-    vec3 sky = vec3(0.012, 0.019, 0.036) + pow(catalog, vec3(1.18)) * vec3(0.38, 0.46, 0.61);
+    float horizon = pow(1.0 - abs(ray.y), 5.0);
+    float nebula = pow(max(0., sin(ray.x*3.3 + ray.z*2.1 + ray.y*4.6)), 5.);
+    vec3 sky = mix(vec3(.013,.025,.059),vec3(.07,.125,.19),horizon*.65);
+    sky += vec3(.026,.017,.047) * nebula;
+    sky += pow(catalog, vec3(1.25)) * vec3(.26,.36,.56);
     gl_FragColor = vec4(sky + vec3(1.0, 0.91, 0.77) * (disk + glare), 1.0);
   }
 `;
@@ -163,6 +167,31 @@ export function CelestialField({ albedo, clouds, galaxy, brightStars }: { bright
           vertexShader={skyVertex} fragmentShader={skyFragment} />
       </mesh>}
       <Starfield catalog={brightStars} />
+      <group position={[-310,95,390]} rotation={[.32,0,.4]}>
+        <mesh>
+          <sphereGeometry args={[20,40,24]}/>
+          <shaderMaterial uniforms={{ light: { value: sunDirection } }} vertexShader={earthVertex} fragmentShader={`
+            uniform vec3 light;
+            varying vec2 surfaceUV;
+            varying vec3 worldNormal;
+            varying vec3 worldPosition;
+            void main(){
+              float band=sin(surfaceUV.y*55.+sin(surfaceUV.x*13.)*.55)*.5+.5;
+              vec3 tint=mix(vec3(.30,.30,.37),vec3(.64,.51,.39),band*.6+surfaceUV.y*.2);
+              float sun=max(0.,dot(normalize(worldNormal),light));
+              float limb=pow(1.-max(0.,dot(normalize(worldNormal),normalize(cameraPosition-worldPosition))),3.);
+              gl_FragColor=vec4(tint*(.11+sun*.95)+vec3(.07,.11,.19)*limb,1.);
+              #include <tonemapping_fragment>
+              #include <colorspace_fragment>
+            }`}/>
+        </mesh>
+        <mesh rotation={[-Math.PI/2+.16,0,0]}>
+          <ringGeometry args={[28,43,96]}/>
+          <shaderMaterial transparent side={DoubleSide} depthWrite={false}
+            vertexShader={`varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`}
+            fragmentShader={`varying vec3 p;void main(){float r=length(p.xy);float bands=.42+.12*sin(r*1.5)+.05*sin(r*4.);float edge=smoothstep(28.,29.,r)*(1.-smoothstep(41.,43.,r));gl_FragColor=vec4(vec3(.63,.59,.54),edge*bands*.48);}`}/>
+        </mesh>
+      </group>
       <mesh ref={earth} position={earthPosition} scale={earthRadius} rotation={[0.08, -0.72, -0.19]}>
         <sphereGeometry args={[1, 48, 28]} />
         <shaderMaterial ref={material} uniforms={uniforms} vertexShader={earthVertex} fragmentShader={earthFragment} />

@@ -14,7 +14,7 @@ export function Bootprints({ walker }: { walker: { current: Walker } }) {
   const normal = useMemo(() => new Vector3(), []);
   useFrame((_, delta) => {
     const player = walker.current;
-    if (!mesh.current || player.speed < 0.35) return;
+    if (!player.grounded || !mesh.current || player.speed < 0.35) return;
     travel.current += player.speed * Math.min(delta, 0.08);
     if (travel.current < 0.67) return;
     travel.current -= 0.67;
