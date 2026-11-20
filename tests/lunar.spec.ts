@@ -29,7 +29,7 @@ test("both landing pages and direct portfolio render at all eight sizes without 
     if (checkingHome && /^\/(?:lunar\/|experience(?:\/|$)|explore(?:\/|$))/.test(pathname)) {
       homepageRequests.push(pathname);
     }
-    if (pathname.startsWith("/lunar/") && !/^\/lunar\/opening(?:-portrait)?\.webp$/.test(pathname)) {
+    if (pathname.startsWith("/lunar/") && !/^\/lunar\/(?:survey-)?opening(?:-portrait)?\.webp$/.test(pathname)) {
       sceneRequests.push(pathname);
     }
   });

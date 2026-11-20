@@ -9,3 +9,10 @@ The React Three Fiber world owns the canvas, meshes and animation. A LOLA elevat
 Camera look input lives in the DOM shell, separate from walker input. Dragging the scene changes a damped third-person orbit, and Observe increases camera distance. Touch movement controls retain pointer capture; open scene area handles look gestures. Quality profiles cap DPR, adjust terrain detail and shadows, and step down on consistently slow active frames. Reduced motion, missing assets, WebGL failure, and context loss retain the direct portfolio route.
 
 A native dialog owns project panel focus. Input is cleared on opening a dialog, losing focus, pointer cancellation and route exit. The direct portfolio is the alternative for reduced motion, loading failures, context loss, and unavailable WebGL.
+
+
+The current exploration shell coordinates three visible modes. Walking accepts camera-relative input and one-shot jump requests. The overview freezes simulation and interpolates a bounded orbit, with the saved walking look restored on return. The native map dialog pauses input and takes a pose snapshot at open time. Scene frame data stays in refs. The map builds contours from the shared terrain height function when opened.
+
+World definitions own the relay, ferry, Orrery and Archive. Scenic demo content fills unassigned installations through withScenicEntries. A real catalog assignment always takes precedence at the same stable world/installation ID. Map details, proximity panels and project links consume these resolved bindings. The authored demo descriptions remain outside the published portfolio records.
+
+Airborne motion integrates velocity with substeps and lands on the same height function that builds the terrain. Horizontal collision stays active during jumps. Footprints and dust emit while grounded. The pose animation blends to a relaxed leg tuck during airtime.

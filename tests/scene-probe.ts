@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-type Traveller = { x: number; z: number; vx: number; vz: number; speed: number; heading: number };
+type Traveller = { x: number; z: number; vx: number; vz: number; speed: number; heading: number; y: number; vy: number; grounded: boolean };
 type Direction = { x: number; y: number; z: number };
 type CameraState = {
   position: Direction & { clone(): Direction };
@@ -43,6 +43,8 @@ export function observeExplorer(page: Page) {
                 ...traveller,
                 alignment: length > 1e-4 ? (traveller.vx * view.x + traveller.vz * view.z) / length : 0,
                 viewX: view.x,
+                viewZ: view.z,
+                cameraY: camera.position.y,
               };
             }
           }
@@ -56,7 +58,7 @@ export function observeExplorer(page: Page) {
 
 export function travellerPose(page: Page) {
   return page.evaluate(() => {
-    const probe = window as unknown as { inspectLunarTraveller: () => (Traveller & { alignment: number; viewX: number }) | null };
+    const probe = window as unknown as { inspectLunarTraveller: () => (Traveller & { alignment: number; viewX: number; viewZ: number; cameraY: number }) | null };
     return probe.inspectLunarTraveller();
   });
 }

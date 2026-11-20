@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { Color, InstancedMesh, Mesh, Object3D, Vector3 } from "three";
+import { Box3, Color, InstancedMesh, Mesh, Object3D, Vector3 } from "three";
 import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { boulders, groundHeight } from "./simulation";
 import type { Quality } from "./quality";
@@ -7,9 +7,9 @@ import type { Quality } from "./quality";
 // Bedrock exposures around the walkable valley. Fragments run down the same
 // strike as their parent ledge, with smaller blocks spreading onto its apron.
 const ledges = [
-  [-27, -40, 0.67, 3.1], [29, -43, -0.72, 4.2], [-47, -13, 1.15, 4.8],
-  [44, -1, -0.33, 2.8], [-36, 22, -0.96, 3.5], [15, 34, 0.29, 3.4],
-  [-6, -46, 0.28, 2.7], [45, 20, 0.90, 3.1], [-14, 39, -0.58, 2.1],
+  [-19, -22, 0.67, 2.1], [24, -23, -0.72, 2.2], [-25, -10, 1.15, 2.8],
+  [33, -1, -0.33, 2.0], [-25, 17, -0.96, 2.2], [15, 25, 0.29, 2.1],
+  [-6, -25, 0.28, 1.9], [28, 18, 0.90, 2.1], [-14, 24, -0.58, 1.8],
 ] as const;
 
 function fraction(seed: number, stream: number) {
@@ -46,7 +46,13 @@ export function SurveyRocks({ asset, variant, quality }: { asset: GLTF; variant:
       const scale = radius / halfWidth;
       object.scale.set(scale * (anchor ? 0.94 : 1.36), radius / extent.y * (anchor ? 0.94 : 1.08), scale * 0.83);
       object.rotation.set((fraction(seed, 4)-0.5)*0.48, strike + fraction(seed, 5) * 1.8, (fraction(seed, 6)-0.5)*0.4);
-      object.position.set(x, groundHeight(x,z) - radius * (anchor ? 0.16 : 0.37), z);
+      object.position.set(0, 0, 0);
+      object.updateMatrix();
+      const rotated = new Box3().copy(bounds).applyMatrix4(object.matrix);
+      const contact = Math.min(groundHeight(x,z),
+        groundHeight(x+radius*.55,z), groundHeight(x-radius*.55,z),
+        groundHeight(x,z+radius*.55), groundHeight(x,z-radius*.55));
+      object.position.set(x, contact - rotated.min.y - radius * .23, z);
       object.updateMatrix();
       instances.setMatrixAt(i, object.matrix);
       const tone = 0.82 + fraction(seed, 7) * 0.29;

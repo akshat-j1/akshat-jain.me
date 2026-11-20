@@ -5,7 +5,7 @@ const sunDirection = new Vector3(...sunlight).normalize();
 
 export function createRegolithMaterial(albedo: Texture, normal: Texture, detail: Texture | null, craterSurface: Texture | null, bedrock: Texture | null) {
   const material = new MeshStandardMaterial({
-    color: "#f4f3f0",
+    color: "#c8cbd8",
     map: albedo,
     normalMap: normal,
     normalScale: new Vector2(0.64, 0.64),
@@ -87,7 +87,9 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
           float minerals = clamp(0.53 + (fault.r - 0.22) * 1.45, 0.47, 1.54);
           dust *= mix(vec3(1.0), vec3(0.99, 1.02, 1.07) * minerals * facets, exposure * 0.86);
         ` : ""}
-        diffuseColor.rgb *= dust * mix(1.04, 1.24, ledge);
+        float mineralVein = sin(vGroundPosition.y * 1.5 + sin(vGroundPosition.x * .19) * 3.0 + vGroundPosition.z * .14);
+        vec3 mineralTint = mix(vec3(.76,.85,1.0), vec3(1.10,.96,.80), smoothstep(-.5,.8,mineralVein) * .6);
+        diffuseColor.rgb *= dust * mix(1.04, 1.18, ledge) * mineralTint;
       `)
       .replace("#include <roughnessmap_fragment>", `
         #include <roughnessmap_fragment>
@@ -116,22 +118,7 @@ export function createRegolithMaterial(albedo: Texture, normal: Texture, detail:
         normal = normalize(tbn * grain);
       `);
     }
-    if (craterSurface) {
-      shader.fragmentShader = shader.fragmentShader.replace("#include <lights_physical_fragment>", `
-        // Keep fine regolith normals near the traveller. Relief in the distance
-        // is resolved from the full-resolution survey instead of the coarse mesh.
-        vec3 surveyed = normalize(mat3(viewMatrix) * rockNormal);
-        normal = normalize(mix(normal, surveyed, regional * 0.97));
-        #include <lights_physical_fragment>
-      `).replace("#include <aomap_fragment>", `
-        #include <aomap_fragment>
-        // Survey lighting integrates terrain self-shadow and local horizon
-        // occlusion at atlas resolution. Preserve dynamic shadows on the trail.
-        reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse,
-          diffuseColor.rgb * (crater.b * crater.b * 2.6), regional);
-        reflectedLight.indirectDiffuse *= 1.0 - regional;
-      `);
-    }
+
   };
   material.customProgramCacheKey = () => `regolith-${Boolean(detail)}-${Boolean(craterSurface)}-${Boolean(bedrock)}`;
   return material;

@@ -1,5 +1,5 @@
 import { ferryObstacles, ferrySite, rimBlocks } from "../../content/ferry-site";
-import { moon, relay } from "../../content/worlds";
+import { artifactSites, moon, relay } from "../../content/worlds";
 export { relay };
 export const spawn = moon.arrival;
 export const boulders = [
@@ -151,9 +151,22 @@ function basinHeight(x: number, z: number) {
 
 export function groundHeight(x: number, z: number) {
   let original = basinHeight(x, z);
+  const distance = Math.hypot(x, z);
+  const outer = smoothRange(34, 68, distance) * (1 - smoothRange(245, 300, distance));
+  // Oblique, branching ridges at several scales prevent repeated radial peaks.
+  const strike = x * .69 + z * .72;
+  const cross = x * -.72 + z * .69;
+  const ridge = geologyNoise(strike * .026 + geologyNoise(x*.013,z*.019)*1.1, cross * .016);
+  const folded = Math.pow(ridge, 2);
+  const fracture = geologyNoise(x*.135 + z*.05,z*.14) - .5;
+  original += outer * (folded * 10 + fracture * (1.0 + folded * 1.8) - 2.5);
   if (x > 14 && x < 35 && z > -23 && z < 2) {
     const apron = 1 - smoothRange(0.24, 1, Math.hypot((x-ferrySite.x)/11, (z-ferrySite.z)/13));
     original += 1.75 * apron;
+  }
+  for (const site of artifactSites) {
+    const pad = 1 - smoothRange(1.55, 3.1, Math.hypot(x-site.x,z-site.z));
+    if (pad > 0) original += (basinHeight(site.x,site.z) - original) * pad;
   }
   if (x <= 4 || x >= 20 || z <= -17 || z >= 5) return original;
   // An oblique rim with two exposed shoulders and a lower saddle between them.
@@ -164,7 +177,7 @@ export function groundHeight(x: number, z: number) {
   return original + flank * ends * (0.55 + notch * (0.8 + 0.6 * geologyNoise(x * 0.76, z * 0.55)));
 }
 
-const solids = [relay, ...boulders, ...rimBlocks, ...ferryObstacles];
+const solids = [...artifactSites.map(site => ({ ...site, radius: 1.45 })), relay, ...boulders, ...rimBlocks, ...ferryObstacles];
 const playerRadius = 0.32;
 
 function canOccupy(x: number, z: number) {
@@ -175,10 +188,18 @@ function canOccupy(x: number, z: number) {
 }
 
 export function createWalker() {
-  return { x: spawn.x, z: spawn.z, vx: 0, vz: 0, heading: Math.PI, speed: 0 };
+  return { x: spawn.x, z: spawn.z, vx: 0, vz: 0, heading: Math.PI, speed: 0, y: groundHeight(spawn.x, spawn.z), vy: 0, grounded: true, landing: 0 };
 }
 
 export type Walker = ReturnType<typeof createWalker>;
+
+export function jumpWalker(player: Walker) {
+  if (!player.grounded) return false;
+  player.grounded = false;
+  player.vy = 4.5;
+  player.landing = 0;
+  return true;
+}
 
 export function stepWalker(player: Walker, horizontal: number, vertical: number, elapsed: number) {
   const duration = Math.max(0, Math.min(0.1, elapsed));
@@ -189,7 +210,7 @@ export function stepWalker(player: Walker, horizontal: number, vertical: number,
 function advance(player: Walker, horizontal: number, vertical: number, delta: number) {
   const inputLength = Math.hypot(horizontal, vertical);
   const scale = inputLength > 0 ? 2.6 / Math.max(1, inputLength) : 0;
-  const weight = 1 - Math.exp(-(scale ? 12 : 20) * delta);
+  const weight = 1 - Math.exp(-(player.grounded ? (scale ? 12 : 20) : 3.8) * delta);
   player.vx += (horizontal * scale - player.vx) * weight;
   player.vz += (vertical * scale - player.vz) * weight;
   if (Math.abs(player.vx) < 0.012) player.vx = 0;
@@ -202,6 +223,20 @@ function advance(player: Walker, horizontal: number, vertical: number, delta: nu
   if (canOccupy(player.x, z)) player.z = z;
   else player.vz = 0;
 
+  const ground = groundHeight(player.x, player.z);
+  player.landing *= Math.exp(-11 * delta);
+  if (!player.grounded) {
+    player.vy -= 4.2 * delta;
+    player.y += player.vy * delta;
+    if (player.y <= ground) {
+      player.landing = Math.min(1, Math.abs(player.vy) / 5);
+      player.y = ground;
+      player.vy = 0;
+      player.grounded = true;
+    }
+  } else {
+    player.y = ground;
+  }
   player.speed = Math.hypot(player.vx, player.vz);
   if (inputLength > 0.04) {
     const direction = player.speed > 0.09 ? Math.atan2(player.vx, player.vz) : Math.atan2(horizontal, vertical);
