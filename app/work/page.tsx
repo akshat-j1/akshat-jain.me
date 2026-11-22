@@ -1,32 +1,49 @@
-import { projectHref } from "../../content/catalog";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "../../components/site-header";
+import { PortfolioHeader } from "../../components/portfolio-header";
+import { ProjectShowcase } from "../../components/project-showcase";
 import { catalog, githubUrl } from "../../content/projects";
 
-export const metadata: Metadata = { title: "Portfolio · Akshat Jain" };
+export const metadata: Metadata = {
+  title: "Portfolio · Akshat Jain",
+  description:
+    "Selected software projects by Akshat Jain, with verified project details, source code and development status.",
+  alternates: { canonical: "/work" },
+};
 
 export default function Work() {
   return (
-    <div className="field field-paper">
-      <div className="field-frame">
-        <SiteHeader mode="portfolio" />
-        <main className="portfolio-main">
-          <h1>Portfolio</h1>
-          <p className="portfolio-intro">I’m Akshat Jain, a computer science student, developer and builder.</p>
-          <section className="portfolio-index" aria-labelledby="work-title">
-            <h2 id="work-title">Selected work</h2>
-            {catalog.projects.length === 0 && <p>No project entries are published yet.</p>}
-            {catalog.projects.map(project => <Link key={project.id} prefetch={false} href={projectHref(project)} className="portfolio-entry">
-              <span>{project.name}</span><span aria-hidden="true">↗</span>
-            </Link>)}
-          </section>
-        </main>
-        <footer className="portfolio-footer">
-          <a href={githubUrl}>GitHub <span aria-hidden="true">↗</span></a>
-          <Link href="/colophon">Credits</Link>
-        </footer>
-      </div>
+    <div className="portfolio p-inner">
+      <a className="p-skip" href="#main">
+        Skip to content
+      </a>
+      <PortfolioHeader />
+      <main className="p-inner-main" id="main" tabIndex={-1}>
+        <p className="p-eyebrow">THE BUILD LAB / SELECTED PROJECTS</p>
+        <h1>Portfolio</h1>
+        <p className="p-inner-intro">
+          Useful software. Unexpected possibilities.
+          <br />A collection of things I’m building and the questions behind
+          them.
+        </p>
+        <div className="p-work-list">
+          {catalog.projects.length === 0 && (
+            <p>No project entries are published yet.</p>
+          )}
+          {catalog.projects.map((project, index) => (
+            <ProjectShowcase key={project.id} project={project} index={index} />
+          ))}
+        </div>
+      </main>
+      <footer className="p-inner-footer">
+        <Link href="/">← Akshat Jain</Link>
+        <div>
+          <Link href="/explore" prefetch={false}>
+            Explore
+          </Link>
+          <a href={githubUrl}>GitHub ↗</a>
+        </div>
+      </footer>
     </div>
   );
 }

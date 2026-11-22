@@ -18,7 +18,9 @@ export default function Colophon() {
             <li>Copernicus relief from <a href="https://pgda.gsfc.nasa.gov/products/54">SLDEM2015</a>, NASA/GSFC LOLA and JAXA SELENE Terrain Camera teams</li>
             <li>Moon Rock 02 and 05 and Rock Face 01 and 03 by <a href="https://polyhaven.com/">Poly Haven</a> · CC0</li>
             <li>Milky Way and star positions from <a href="https://svs.gsfc.nasa.gov/4851/">NASA/Goddard Space Flight Center Scientific Visualization Studio</a>, using Gaia, Hipparcos and Tycho catalogs</li>
-            <li>Opening artwork generated with OpenAI ImageGen</li>
+            <li>Opening artwork, ringed horizon, survey ferry and survey robot generated with OpenAI ImageGen</li>
+            <li>Portfolio orbital arrival artwork generated with OpenAI ImageGen. MEETFLIX’s original effect background and synthetic QA frame are from <a href="https://github.com/akshat-j1/meetflix">Akshat’s project repository</a>.</li>
+            <li>ASCII portrait from <a href="https://github.com/akshat-j1">Akshat’s public profile</a>. Weather and language showcase studies are original interface artwork, not product screenshots.</li>
             <li>Instrument Serif and Inter · SIL Open Font License</li>
           </ul>
         </main>

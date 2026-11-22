@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import "./globals.css";
 import "./field.css";
+import "./portfolio.css";
 
 const instrumentSerif = localFont({
   src: [

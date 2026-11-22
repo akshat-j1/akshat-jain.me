@@ -51,3 +51,34 @@ The Orrery, Archive, route lamps, distant courier, ringed world, terrain refinem
 The local survey-opening.webp and survey-opening-portrait.webp are browser captures of the implemented world. Their underlying spacesuit, rock, terrain, sky and Earth assets retain the licenses listed above. The original generated opening images remain available in the source history and assets. No research artwork was imported into the scene.
 
 Vercel React Best Practices is MIT-licensed guidance. Anthropic Frontend Design was reviewed from its official repository as process guidance. Neither adds a runtime dependency.
+
+## Cinematic personal portfolio — 21 November 2026
+
+| Local asset | Source / reuse basis | Preparation and scope |
+| --- | --- | --- |
+| `public/portfolio/orbital-arrival.webp` | Original artwork created with built-in OpenAI ImageGen for this website, without a reference image. No third-party photography embedded or paid stock purchased. | 1536 × 1024, 43,646 bytes. Decorative planetary art, not a NASA photograph or a screenshot of the playable renderer. Original PNG retained outside the repository. |
+| `public/portfolio/meetflix-office.webp` | [Akshat’s MEETFLIX original effect background](https://github.com/akshat-j1/meetflix/blob/main/public/fine/office.webp); [source notice](https://github.com/akshat-j1/meetflix/blob/main/public/fine/ASSET-NOTICES.md) identifies original ImageGen art without copied film/comic imagery. User explicitly requested reuse of verified project materials for their portfolio. Source blob `4a2335f51acd51278096699c562281625fd4425f`. | Resized to 1440 × 810, 143,872 bytes. Captioned as original effect artwork, not a live meeting. No models, runtime code or third-party inference assets redistributed. |
+| `public/portfolio/meetflix-qa.webp` | [Synthetic QA frame](https://github.com/akshat-j1/meetflix/blob/main/docs/qa/fine-v062.png), same user-owned project. Source blob `17a8f3be5d68430bc92888f7ad441b4198b313b0`. | 1280 × 720, 63,182 bytes. Explicitly labeled synthetic QA, not a real participant or customer meeting. Lazy-loaded only on the MEETFLIX page. |
+| `public/portfolio/portrait-ascii.webp` | [Akshat’s profile illustration](https://github.com/akshat-j1/akshat-j1/blob/main/assets/portrait-ascii.png). The profile describes the source as his illustration; reuse is within the requested personal portfolio. Source blob `020ff12a5edcb72dbd5a7aa1650c426e1f571c61`. | 504 × 744, 107,764 bytes. Identified as an ASCII illustration, not a photograph. |
+| Weather signal field and language typography study | Original HTML/CSS artwork in the reusable project presentation component. Labels and content come from the catalog. | Explicitly illustrative. No fictional weather values, test scores or accreditation. No asset downloaded at runtime. |
+| Expedition previews `/lunar/survey-opening.webp` and `survey-opening-portrait.webp` | Existing browser capture of the implemented world, as documented in the earlier survey-opening ledger entry. Underlying spacesuit, terrain, rock, sky and Earth rights remain as listed above. | Reused without changing the 3D scene. Caption identifies an in-browser capture. |
+
+The public project repositories do not declare an open-source license in GitHub metadata. Reuse here is the owner’s requested reuse of their own portfolio material; this ledger does not grant a general public redistribution license. The weather repository’s design reference image was inspected but excluded: it contains sample impact figures, official-government wording and third-party map imagery that should not be presented as this demo’s verified outcome.
+
+### Portfolio arrival generation brief
+
+> Create an original cinematic photographic space background plate for Akshat Jain’s personal developer portfolio. Widescreen landscape 1536 by 1024 or wider. Absolutely no text, letters, logos, interface or people. Restrained cinematic photography. A colossal dark terrestrial planet sweeps through the lower half; pale silver-blue atmospheric rim and a small restrained amber sunrise on the far-right horizon. Subtle mineral surface, dark seas and fine clouds. Upper 55 percent clean deep midnight navy negative space, a few faint stars, one small distant moon upper right. Quiet, majestic scale, plausible lighting, no purple nebula, dense galaxy, lens-flare streak, neon glow, diagrams, rings, spacecraft or spiky mountains. Center upper half stays dark for ivory HTML typography.
+
+Original generation was text-to-image using no referenced artwork. The repository stores only the optimized WebP.
+
+## Flight Log homepage
+
+All three assets below are original fictional artwork generated for this project with OpenAI ImageGen from text prompts. No reference images, stock assets or third-party character designs were used. The spacecraft and robot were generated with transparency so the browser can move them independently.
+
+| Local file | Generation brief |
+| --- | --- |
+| `public/flight/ringed-horizon.webp` | A copper volcanic landscape beneath a giant dark ringed planet. Open plum sky on the left for page text. |
+| `public/flight/survey-ferry.webp` | An ivory and burgundy needle-nose survey craft with sculpted fins and warm engine cores, seen from below in three-quarter view. |
+| `public/flight/survey-robot.webp` | A lavender ceramic survey robot with orange pixel eyes, small thrusters and one raised hand. |
+
+PNG originals were encoded as WebP locally. The existing project artwork remains available for the work pages and previous review.

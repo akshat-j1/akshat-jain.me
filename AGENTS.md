@@ -1,6 +1,6 @@
 # Lunar Field Log
 
-- Follow the scope in [docs/roadmap.md](docs/roadmap.md). The current deliverable is the cinematic exploration upgrade. Aesthetic beauty and immersion take priority over scientific realism. Preserve the original coming-soon page at / and its /experience link.
+- Follow the scope in [docs/roadmap.md](docs/roadmap.md). The current deliverable is the cinematic personal portfolio homepage. Preserve /explore, /work and stable project URLs. Archive the original coming-soon page at /coming-soon; /experience redirects to /. Release requires visual approval.
 - Keep the App Router and strict TypeScript. Portfolio content and navigation must work with ordinary HTML links and without WebGL.
 - Keep input, simulation, camera, rendering, and interface responsibilities separate. Use refs for per-frame data and reserve React state for visible state changes.
 - Keep artwork local. Verify reuse rights and update the asset ledger before adding external assets.

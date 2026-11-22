@@ -51,6 +51,7 @@ test("invalid editorial changes fail validation before publication", () => {
   expect(() => load([{ ...sample, assignments: [atRelay, atRelay] }])).toThrow("Multiple assignments");
   const screenshot = { src: "/test.webp", alt: "Test", width: 10, height: 10 };
   expect(() => load([{ ...sample, screenshots: [screenshot] }])).toThrow("missing screenshot");
+  expect(() => load([{ ...sample, presentation: { category: "Test", title: "Test", hook: "Test", visual: "image", caption: "Test", cover: screenshot } }])).toThrow("missing screenshot");
 });
 
 test("unknown project URLs return a readable 404 with working history navigation", async ({ page }) => {

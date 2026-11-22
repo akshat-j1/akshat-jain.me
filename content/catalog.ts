@@ -8,9 +8,33 @@ export type Project = {
   publication: "published" | "draft";
   entry: "in-preparation" | "brief" | "case-study";
   status?: string;
+  featured?: boolean;
   summary?: string;
+  presentation?: {
+    category: string;
+    title: string;
+    hook: string;
+    visual: "image" | "weather-study" | "language-study";
+    caption: string;
+    overlay?: { top: string; title: string; bottom: string };
+    study?: {
+      label: string;
+      heading?: string;
+      emphasis?: string;
+      footer?: string;
+      details?: readonly string[];
+      scale?: readonly string[];
+    };
+    cover?: { src: string; alt: string; width: number; height: number };
+  };
   technologies?: readonly string[];
-  screenshots?: readonly { src: string; alt: string; width: number; height: number; credit?: string }[];
+  screenshots?: readonly {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    credit?: string;
+  }[];
   links?: readonly { label: string; href: string }[];
   sections?: readonly { heading: string; paragraphs: readonly string[] }[];
   aliases?: readonly string[];
@@ -50,7 +74,7 @@ export function buildCatalog(records: readonly Project[], retirements: readonly 
       reserve(slugs, alias, "slug");
       if (project.publication === "published") redirects.set(alias, projectHref(project));
     }
-    for (const image of project.screenshots ?? []) {
+    for (const image of [...(project.screenshots ?? []), ...(project.presentation?.cover ? [project.presentation.cover] : [])]) {
       if (!/^\/(?:[\w-]+\/)*[\w.-]+\.(?:avif|webp|jpe?g|png)$/i.test(image.src) ||
         !image.alt.trim() || !(image.width > 0 && image.height > 0) || !hasMedia(image.src)) {
         throw new Error(`Invalid or missing screenshot for ${project.id}: ${image.src}`);
