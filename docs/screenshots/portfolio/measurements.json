@@ -1,0 +1,128 @@
+{
+  "baseURL": "http://127.0.0.1:3200",
+  "date": "2026-11-21T03:53:12.639Z",
+  "browser": "158.0.8127.36",
+  "conditions": "Production localhost. Fresh browser contexts; warm server image cache. Mobile is Chrome emulation, 4x CPU, 1.6 Mbps down / 750 Kbps up / 150 ms latency. Desktop is unthrottled. Three navigation runs each. No physical-device or field INP claim.",
+  "navigation": [
+    {
+      "device": "desktop",
+      "run": 1,
+      "lcp": 68,
+      "cls": 0,
+      "longTasks": [],
+      "fcp": 52,
+      "domContentLoaded": 29.399999998509884,
+      "transferredBytes": 343822,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    },
+    {
+      "device": "desktop",
+      "run": 2,
+      "lcp": 52,
+      "cls": 0,
+      "longTasks": [],
+      "fcp": 52,
+      "domContentLoaded": 13.399999998509884,
+      "transferredBytes": 343822,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    },
+    {
+      "device": "desktop",
+      "run": 3,
+      "lcp": 40,
+      "cls": 0,
+      "longTasks": [],
+      "fcp": 40,
+      "domContentLoaded": 29,
+      "transferredBytes": 343822,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    },
+    {
+      "device": "mobile",
+      "run": 1,
+      "lcp": 1376,
+      "cls": 0,
+      "longTasks": [],
+      "fcp": 904,
+      "domContentLoaded": 735.2000000029802,
+      "transferredBytes": 316662,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    },
+    {
+      "device": "mobile",
+      "run": 2,
+      "lcp": 1372,
+      "cls": 0,
+      "longTasks": [],
+      "fcp": 900,
+      "domContentLoaded": 735,
+      "transferredBytes": 316662,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    },
+    {
+      "device": "mobile",
+      "run": 3,
+      "lcp": 1364,
+      "cls": 0,
+      "longTasks": [
+        50
+      ],
+      "fcp": 884,
+      "domContentLoaded": 719,
+      "transferredBytes": 316662,
+      "scriptTransferBytes": 145525,
+      "requests": 18,
+      "sceneAssets": []
+    }
+  ],
+  "scrolling": [
+    {
+      "device": "desktop",
+      "frames": 241,
+      "p50Ms": 16.699999999999818,
+      "p95Ms": 16.700000000000728,
+      "over50Ms": 0
+    },
+    {
+      "device": "mobile-4x-cpu",
+      "frames": 240,
+      "p50Ms": 16.69999999999891,
+      "p95Ms": 16.799999999999272,
+      "over50Ms": 0
+    }
+  ],
+  "accessibility": [
+    {
+      "name": "desktop",
+      "violations": [],
+      "passes": 43,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 33
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "violations": [],
+      "passes": 44,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 34
+        }
+      ]
+    }
+  ]
+}

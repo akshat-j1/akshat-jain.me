@@ -1,3 +1,9 @@
+# Current milestone — cinematic personal portfolio
+
+The homepage is now a scroll-driven flight for local visual review. See the [flight storyboard](flight-storyboard.md) for the liftoff, orbital coast and robot encounter. Project browsing remains a direct destination at `/work`. `/experience` redirects to `/`; V0 remains at `/coming-soon`. The exploration scene is preserved at `/explore`, with no new flight or observatory implementation. Three verified projects share the existing catalog across the homepage, `/work` and optional discovery assignments. Production release requires the user’s visual approval. See [verified portfolio content](portfolio-content.md) and the [earlier homepage review](portfolio-review.md).
+
+The historical exploration roadmap follows. Its old coming-soon and missing-project-content assumptions are superseded by this milestone.
+
 # Roadmap
 
 1. Current scope includes the cinematic exploration upgrade, stylized low-gravity jumping, a survey map, orbital overview, scenic installations and restrained environmental motion. See [creative direction](creative-direction.md).

@@ -16,3 +16,12 @@ The current exploration shell coordinates three visible modes. Walking accepts c
 World definitions own the relay, ferry, Orrery and Archive. Scenic demo content fills unassigned installations through withScenicEntries. A real catalog assignment always takes precedence at the same stable world/installation ID. Map details, proximity panels and project links consume these resolved bindings. The authored demo descriptions remain outside the published portfolio records.
 
 Airborne motion integrates velocity with substeps and lands on the same height function that builds the terrain. Horizontal collision stays active during jumps. Footprints and dust emit while grounded. The pose animation blends to a relaxed leg tuck during airtime.
+
+
+## Cinematic personal portfolio
+
+The homepage, work index and individual project briefs are static Server Components. `content/projects.ts` supplies project content and optional presentation data; `content/profile.ts` supplies personal content and toolkit evidence IDs. Catalog validation includes presentation covers. The homepage filters explicit `featured` flags, while `/work` includes all published entries. Names and URLs for toolkit evidence are resolved against published records before crossing the client boundary.
+
+Only the header disclosure behavior, toolkit selection and progressive motion are client components. Input and simulation code is not imported by these pages. IntersectionObserver handles one-time reveals and offscreen ambient suspension; scroll updates are coalesced in requestAnimationFrame and do not use React state. The essential content and native links work without JavaScript. Reduced motion disables all portfolio animation and reveals never gate content access.
+
+`/experience` is a permanent redirect to `/`, avoiding a duplicate landing page. `/coming-soon` preserves the V0 page as a noindex archive. Existing project IDs, retirement redirects and the MEETFLIX relay binding are preserved. Exploration Exit and brand links now lead directly to `/`. No new runtime dependency was added.

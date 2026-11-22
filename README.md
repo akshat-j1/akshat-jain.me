@@ -1,6 +1,8 @@
 # akshat-jain.me
 
-The approved coming-soon page lives at `/`. Its Coming soon link opens Lunar Field Log at `/experience`. The interactive world is at `/explore`, and the portfolio is directly available at `/work`.
+The local homepage follows a spacecraft from liftoff to a lunar survey robot. Scroll through the journey, wave to the robot, or use the header to go directly to the portfolio. The playable Moon is at `/explore`, and project details are at `/work`. `/experience` redirects to the homepage, and the original V0 page is archived at `/coming-soon`.
+
+See the [flight storyboard](docs/flight-storyboard.md) for the current design and [portfolio content research](docs/portfolio-content.md) for project sources.
 
 ## Local development
 
